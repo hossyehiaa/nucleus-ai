@@ -683,6 +683,10 @@ def get_subscription(business_id):
 def init_db():
     """Initialize the database with tables"""
     with app.app_context():
+        # ⚠️  TEMP: Drop all tables so PostgreSQL schema matches current models.
+        # TODO: Remove db.drop_all() after the first successful deployment —
+        #       keeping it will wipe ALL production data on every restart!
+        db.drop_all()
         db.create_all()
         print("Database initialized successfully!")
 
