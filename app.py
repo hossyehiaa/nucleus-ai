@@ -87,7 +87,7 @@ class Business(db.Model):
     
     def can_access_bot(self):
         """Check if business can access the AI bot"""
-        return self.subscription_status in ['starter', 'pro', 'agency']
+        return self.subscription_status in ['free', 'starter', 'pro', 'agency']
     
     def update_subscription_limits(self):
         """Update limits based on subscription tier"""
