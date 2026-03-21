@@ -236,6 +236,16 @@ Always maintain a helpful, professional tone. Build trust through genuine assist
     return industry_prompts.get(industry, industry_prompts['Generic/Other'])
 
 
+# ============== AI UTILS ==============
+
+def detect_language(text):
+    """Detect if text is primarily Arabic or English"""
+    if not text:
+        return 'en'
+    arabic_chars = sum(1 for c in text if '\u0600' <= c <= '\u06FF')
+    return 'ar' if arabic_chars > len(text) * 0.3 else 'en'
+
+
 # ============== GROQ AI INTEGRATION ==============
 
 def get_grok_response(messages, business_id):
@@ -256,8 +266,20 @@ def get_grok_response(messages, business_id):
         if not business:
             return "Error: Business not found"
 
-        # Build full message list: system prompt + conversation history
-        full_messages = [{"role": "system", "content": business.system_prompt}]
+        # Detect user's language
+        user_message = ""
+        if messages:
+            for msg in reversed(messages):
+                if msg.get("role") == "user":
+                    user_message = msg.get("content", "")
+                    break
+        
+        lang = detect_language(user_message)
+        lang_instruction = "IMPORTANT: The user is speaking Arabic. You MUST respond in Arabic." if lang == 'ar' else "IMPORTANT: The user is speaking English. You MUST respond in English."
+
+        # Build full message list: system prompt + language enforcement + conversation history
+        full_system_prompt = f"{business.system_prompt}\n\n{lang_instruction}"
+        full_messages = [{"role": "system", "content": full_system_prompt}]
         full_messages.extend(messages)
 
         chat_completion = client.chat.completions.create(
@@ -274,48 +296,40 @@ def get_grok_response(messages, business_id):
 
 
 def get_mock_response(messages, business_id):
-    """Generate intelligent mock responses for demo purposes"""
+    """Generate intelligent mock responses using actual business context and bilingual support"""
     
     business = Business.query.get(business_id)
     business_name = business.name if business else "our business"
+    context_data = business.context_data if business and business.context_data else "No specific context provided."
     
     # Get the last user message
     user_message = ""
     if messages:
         for msg in reversed(messages):
             if msg.get("role") == "user":
-                user_message = msg.get("content", "").lower()
+                user_message = msg.get("content", "")
                 break
+                
+    # Detect language
+    lang = detect_language(user_message)
+    user_msg_lower = user_message.lower()
     
     # Check if user is providing contact info
-    name_match = re.search(r'(?:my name is|i\'m|i am|call me|this is|it\'s)\s+([a-zA-Z\s]+?)(?:\s+(?:and|my|phone|email|contact)|$)', user_message, re.IGNORECASE)
-    # More flexible phone detection
-    phone_match = re.search(r'(?:phone|number|cell|mobile|call)[\s:]*([\d\s\-\(\)\+]{10,})', user_message, re.IGNORECASE)
+    name_match = re.search(r'(?:my name is|i\'m|i am|call me|this is|it\'s|اسمي|أنا|تدعوني)\s+([a-zA-Z\u0600-\u06FF\s]+?)(?:\s+(?:and|my|phone|email|contact|رقم|تواصل)|$)', user_message, re.IGNORECASE)
+    phone_match = re.search(r'(?:phone|number|cell|mobile|call|رقم|هاتف|تليفون|موبايل)[\s:]*([\d\s\-\(\)\+]{10,})', user_message, re.IGNORECASE)
     if not phone_match:
         phone_match = re.search(r'(\b\d{3}[-.]?\d{3}[-.]?\d{4}\b|\b\+?\d{1,3}[\s.-]?\d{3}[\s.-]?\d{3}[\s.-]?\d{4}\b)', user_message)
     email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', user_message)
     
-    responses = {
-        'greeting': f"Hello! Welcome to {business_name}. I'm your AI assistant, here to help you with any questions about our products and services. How can I assist you today?",
-        
-        'price': f"I'd be happy to share our pricing information! We offer competitive rates tailored to your needs. Would you like me to provide specific details? Also, I can connect you with our team - just share your name and phone number!",
-        
-        'service': f"At {business_name}, we offer a range of services designed to meet your needs. Our team is dedicated to providing exceptional quality and customer satisfaction. What specific area are you interested in learning more about?",
-        
-        'contact': f"I'd love to help you get in touch with our team! Could you please share your name and phone number? I'll make sure they reach out to you promptly.",
-        
-        'hours': f"We're available to serve you during our regular business hours. For the most up-to-date schedule and availability, feel free to ask! Would you like me to help schedule something for you?",
-        
-        'default': f"Thank you for reaching out to {business_name}! I'm here to help answer your questions and assist you with anything you need. Could you tell me a bit more about what you're looking for?"
-    }
-    
-    # Check for lead capture FIRST (before other keyword checks)
+    # Check for lead capture FIRST
     if name_match and (phone_match or email_match):
-        # User provided contact info
         name = name_match.group(1).strip() if name_match else "Unknown"
         contact = phone_match.group(1).strip() if phone_match else (email_match.group(0) if email_match else "Unknown")
         
-        response = f"Thank you, {name}! I've captured your information. Our team will reach out to you at {contact} very soon. Is there anything else I can help you with in the meantime?"
+        if lang == 'ar':
+            response = f"شكراً لك، {name}! لقد سجلنا بياناتك. سيتواصل معك فريقنا على {contact} قريباً. هل هناك أي شيء آخر يمكنني مساعدتك به؟"
+        else:
+            response = f"Thank you, {name}! I've captured your information. Our team will reach out to you at {contact} very soon. Is there anything else I can help you with in the meantime?"
         
         # Simulate lead capture
         lead = Lead(
@@ -326,19 +340,40 @@ def get_mock_response(messages, business_id):
         )
         db.session.add(lead)
         db.session.commit()
-        
-    elif any(word in user_message for word in ['hello', 'hi', 'hey', 'good morning', 'good afternoon']):
-        response = responses['greeting']
-    elif any(word in user_message for word in ['price', 'cost', 'how much', 'pricing', 'rate', 'fee']):
-        response = responses['price']
-    elif any(word in user_message for word in ['service', 'offer', 'provide', 'do you']):
-        response = responses['service']
-    elif any(word in user_message for word in ['contact', 'reach', 'call', 'speak', 'talk']):
-        response = responses['contact']
-    elif any(word in user_message for word in ['hour', 'open', 'close', 'when', 'time']):
-        response = responses['hours']
+        return response
+
+    # Bilingual responses with embedded context_data
+    keyword_responses = {
+        'en': {
+            'greeting': f"Hello! Welcome to {business_name}. I'm your AI assistant. How can I assist you today?",
+            'price': f"Here is our pricing and product information:\n\n{context_data}\n\nWould you like me to connect you with our team? Just share your name and phone number!",
+            'service': f"Here is what we offer:\n\n{context_data}\n\nWhat specific service are you interested in?",
+            'contact': f"I'd love to connect you with our team! Could you please share your name and phone number?",
+            'hours': f"Here are our details:\n\n{context_data}\n\nWould you like me to help schedule something?",
+            'default': f"Thank you for reaching out to {business_name}! Here is what you need to know about us:\n\n{context_data}\n\nCould you tell me a bit more about what you're looking for?"
+        },
+        'ar': {
+            'greeting': f"مرحباً! أهلاً بك في {business_name}. أنا مساعدك الذكي، كيف يمكنني مساعدتك اليوم؟",
+            'price': f"إليك أسعارنا ومعلومات منتجاتنا:\n\n{context_data}\n\nهل ترغب في التواصل مع فريقنا؟ فقط شارك اسمك ورقم هاتفك!",
+            'service': f"إليك ما نقدمه:\n\n{context_data}\n\nما هي الخدمة التي تهتم بها؟",
+            'contact': f"يسعدني أن أوصلك بفريقنا! هل يمكنك مشاركة اسمك ورقم هاتفك؟",
+            'hours': f"إليك تفاصيل العمل الخاصة بنا:\n\n{context_data}\n\nهل ترغب في المساعدة لجدولة موعد؟",
+            'default': f"شكراً لتواصلك مع {business_name}! إليك بعض المعلومات عنا:\n\n{context_data}\n\nهل يمكنك إخباري بالمزيد عما تبحث عنه؟"
+        }
+    }
+    
+    if any(word in user_msg_lower for word in ['hello', 'hi', 'hey', 'good morning', 'مرحبا', 'مرحباً', 'اهلا', 'أهلا', 'السلام']):
+        response = keyword_responses[lang]['greeting']
+    elif any(word in user_msg_lower for word in ['price', 'cost', 'how much', 'pricing', 'product', 'سعر', 'اسعار', 'أسعار', 'بكم', 'تكلفة', 'منتج', 'منتجات']):
+        response = keyword_responses[lang]['price']
+    elif any(word in user_msg_lower for word in ['service', 'offer', 'provide', 'خدمة', 'خدمات', 'عرض', 'تقدم']):
+        response = keyword_responses[lang]['service']
+    elif any(word in user_msg_lower for word in ['contact', 'reach', 'call', 'تواصل', 'اتصال', 'رقم']):
+        response = keyword_responses[lang]['contact']
+    elif any(word in user_msg_lower for word in ['hour', 'open', 'close', 'مواعيد', 'ساعة', 'مفتوح', 'وقت']):
+        response = keyword_responses[lang]['hours']
     else:
-        response = responses['default']
+        response = keyword_responses[lang]['default']
     
     return response
 
