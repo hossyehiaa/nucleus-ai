@@ -679,20 +679,16 @@ def get_subscription(business_id):
 
 
 # ============== INITIALIZE DATABASE ==============
+# ============== INITIALIZE DATABASE ==============
 
-def init_db():
-    """Initialize the database with tables"""
-    with app.app_context():
-        # ⚠️  TEMP: Drop all tables so PostgreSQL schema matches current models.
-        # TODO: Remove db.drop_all() after the first successful deployment —
-        #       keeping it will wipe ALL production data on every restart!
-        db.drop_all()
-        db.create_all()
-        print("Database initialized successfully!")
-
+# الكود ده بره أي دوال عشان Render ينفذه فوراً أول ما يقرأ الملف
+with app.app_context():
+    # ⚠️  TEMP: Drop all tables so PostgreSQL schema matches current models.
+    db.drop_all()
+    db.create_all()
+    print("Database initialized successfully!")
 
 if __name__ == '__main__':
-    init_db()
     debug = os.environ.get('FLASK_DEBUG', 'false').lower() in ('true', '1', 'yes')
     port = int(os.environ.get('PORT', 5001))
     app.run(debug=debug, host='0.0.0.0', port=port)
