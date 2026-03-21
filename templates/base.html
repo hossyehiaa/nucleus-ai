@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Nucleus AI{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Custom Brand Colors - Easily change these hex codes */
+            --primary-color: #3b82f6;      /* Blue - Main brand color */
+            --primary-light: #60a5fa;
+            --primary-dark: #2563eb;
+            --secondary-color: #06b6d4;    /* Cyan - Accent color */
+            --secondary-light: #22d3ee;
+            --accent-color: #10b981;       /* Green - Success/CTA */
+            --background-dark: #030712;
+            --background-card: #111827;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+        }
+        
+        /* Tailwind-style classes using CSS variables */
+        .bg-primary { background-color: var(--primary-color); }
+        .bg-primary-dark { background-color: var(--primary-dark); }
+        .text-primary-color { color: var(--primary-color); }
+        .text-secondary-color { color: var(--secondary-color); }
+        .border-primary { border-color: var(--primary-color); }
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        html[dir="rtl"] * {
+            font-family: 'Cairo', 'Inter', sans-serif;
+        }
+        
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.6); }
+        }
+        
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient-shift 4s ease infinite;
+        }
+        
+        .bg-gradient-radial {
+            background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+        }
+        
+        .bg-grid {
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        
+        .glass-card {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.4);
+        }
+        
+        /* Language Toggle */
+        .lang-toggle {
+            position: relative;
+            display: flex;
+            background: rgba(31, 41, 55, 0.8);
+            border-radius: 9999px;
+            padding: 4px;
+        }
+        
+        .lang-toggle button {
+            padding: 6px 12px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .lang-toggle button.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        
+        .lang-toggle button:not(.active) {
+            color: #9ca3af;
+        }
+        
+        .lang-toggle button:not(.active):hover {
+            color: white;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-950 text-white min-h-screen">
+    <!-- Background Effects -->
+    <div class="fixed inset-0 bg-grid pointer-events-none"></div>
+    <div class="fixed inset-0 bg-gradient-radial pointer-events-none"></div>
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-card">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
+                    <!-- CUSTOM LOGO: Replace src with your logo URL -->
+                    <img 
+                        id="brandLogo"
+                        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cellipse cx='20' cy='20' rx='16' ry='6' fill='none' stroke='%233b82f6' stroke-width='1.5'/%3E%3Cellipse cx='20' cy='20' rx='16' ry='6' fill='none' stroke='%2306b6d4' stroke-width='1.5' transform='rotate(60 20 20)'/%3E%3Cellipse cx='20' cy='20' rx='16' ry='6' fill='none' stroke='%2310b981' stroke-width='1.5' transform='rotate(120 20 20)'/%3E%3Ccircle cx='20' cy='20' r='4' fill='url(%23grad)'/%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%233b82f6'/%3E%3Cstop offset='100%25' style='stop-color:%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E"
+                        alt="Nucleus AI Logo"
+                        class="w-10 h-10"
+                    >
+                    <!--
+                    To use your custom logo, replace the src above with your logo URL:
+                    src="https://your-domain.com/your-logo.png"
+                    -->
+                    <span class="text-xl font-bold" data-i18n="brand_name">Nucleus <span class="gradient-text">AI</span></span>
+                </a>
+                
+                <div class="flex items-center space-x-4 rtl:space-x-reverse">
+                    <!-- Language Toggle -->
+                    <div class="lang-toggle">
+                        <button id="langEN" class="active" onclick="setLanguage('en')">EN</button>
+                        <button id="langAR" onclick="setLanguage('ar')">ع</button>
+                    </div>
+                    
+                    {% block nav_links %}
+                    <a href="/services" class="hidden md:block text-gray-400 hover:text-white transition-colors" data-i18n="nav_services">Services</a>
+                    <a href="/pricing" class="hidden md:block text-gray-400 hover:text-white transition-colors" data-i18n="nav_pricing">Pricing</a>
+                    <a href="/onboarding" class="btn-primary px-6 py-2 rounded-full font-semibold text-sm" data-i18n="nav_get_started">Get Started</a>
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-20">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-gray-800 mt-12">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center space-x-3 rtl:space-x-reverse">
+                    <img 
+                        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cellipse cx='16' cy='16' rx='12' ry='5' fill='none' stroke='%233b82f6' stroke-width='1'/%3E%3Ccircle cx='16' cy='16' r='3' fill='url(%23grad2)'/%3E%3Cdefs%3E%3ClinearGradient id='grad2' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%233b82f6'/%3E%3Cstop offset='100%25' style='stop-color:%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E"
+                        alt="Nucleus AI"
+                        class="w-8 h-8"
+                    >
+                    <span class="text-lg font-semibold" data-i18n="brand_name">Nucleus AI</span>
+                </div>
+                <p class="text-gray-500 text-sm" data-i18n="footer_copyright">
+                    © 2025 Nucleus AI. When Your Business Thinks for Itself.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Localization Script -->
+    <script>
+        // Translations
+        const translations = {
+            en: {
+                brand_name: 'Nucleus <span class="gradient-text">AI</span>',
+                nav_home: 'Home',
+                nav_services: 'Services',
+                nav_pricing: 'Pricing',
+                nav_get_started: 'Get Started',
+                footer_copyright: '© 2025 Nucleus AI. When Your Business Thinks for Itself.',
+                
+                // Landing page
+                hero_title: 'Nucleus AI',
+                hero_subtitle: 'When Your Business <span class="text-white font-semibold">Thinks for Itself</span>',
+                hero_description: 'Automate your sales, capture leads, and support customers 24/7 with a custom AI agent tailored to your industry—in under 2 minutes.',
+                hero_cta: 'Create Your AI Agent →',
+                hero_secondary: 'See How It Works',
+                stat_setup: 'Setup Time',
+                stat_availability: 'Availability',
+                stat_industries: 'Industries',
+                
+                // Features
+                features_title: 'Built for <span class="gradient-text">Modern Businesses</span>',
+                features_subtitle: 'Everything you need to automate customer interactions and grow your business',
+                feature1_title: 'Instant Setup',
+                feature1_desc: 'No coding required. Answer a few questions about your business and your AI agent is ready in under 2 minutes.',
+                feature2_title: 'Smart Lead Capture',
+                feature2_desc: 'Your AI agent naturally collects customer names, contacts, and intents during conversations—automatically.',
+                feature3_title: 'Industry-Tailored',
+                feature3_desc: 'Pre-built prompts for E-commerce, Fitness, Marketing Agencies, and more—optimized for your specific industry.',
+                
+                // How it works
+                how_title: 'How It <span class="gradient-text">Works</span>',
+                how_subtitle: 'Three simple steps to your custom AI agent',
+                step1_title: 'Tell Us About Your Business',
+                step1_desc: 'Enter your business name, select your industry, and share your products, services, and policies.',
+                step2_title: 'AI Learns Your Business',
+                step2_desc: 'We generate a custom AI agent trained on your industry best practices and business knowledge.',
+                step3_title: 'Start Converting Leads',
+                step3_desc: 'Your AI agent is ready to engage customers, answer questions, and capture leads 24/7.',
+                
+                // CTA
+                cta_title: 'Ready to Let Your Business <span class="gradient-text">Think for Itself?</span>',
+                cta_subtitle: 'Join hundreds of businesses already using Nucleus AI to automate their sales and support.',
+                cta_button: 'Create Your Free AI Agent →',
+                cta_note: 'No credit card required • Setup in 2 minutes',
+                
+                // Onboarding
+                onboard_step1_title: 'What\'s your business name?',
+                onboard_step1_subtitle: 'This will be used to personalize your AI agent',
+                onboard_step1_label: 'Business Name',
+                onboard_step1_placeholder: 'e.g., TechFit Gym, StyleHub Store...',
+                onboard_continue: 'Continue →',
+                onboard_back: '← Back',
+                
+                onboard_step2_title: 'Select your industry',
+                onboard_step2_subtitle: 'We\'ll customize your AI agent for your specific needs',
+                onboard_ecommerce_title: 'E-commerce / Clothing',
+                onboard_ecommerce_desc: 'Fashion stores, retail shops, online boutiques',
+                onboard_gym_title: 'Gym / Fitness',
+                onboard_gym_desc: 'Gyms, fitness studios, personal training',
+                onboard_marketing_title: 'Marketing Agency',
+                onboard_marketing_desc: 'Digital marketing, SEO, advertising agencies',
+                onboard_other_title: 'Generic / Other',
+                onboard_other_desc: 'Any other business type',
+                
+                onboard_step3_title: 'Tell us about your business',
+                onboard_step3_subtitle: 'Share your prices, services, and any important information',
+                onboard_step3_label: 'Business Knowledge',
+                onboard_step3_hint: '💡 The more details you provide, the smarter your AI agent will be!',
+                onboard_submit: '🚀 Create My AI Agent',
+                
+                // Dashboard
+                dashboard_ai_active: 'AI Active',
+                dashboard_new_agent: '+ New Agent',
+                dashboard_total_leads: 'Total Leads',
+                dashboard_this_week: 'This Week',
+                dashboard_availability: 'Availability',
+                dashboard_industry: 'Industry',
+                dashboard_bot_tester: 'AI Bot Tester',
+                dashboard_bot_tester_desc: 'Test your AI agent\'s responses',
+                dashboard_clear_chat: 'Clear Chat',
+                dashboard_captured_leads: 'Captured Leads',
+                dashboard_leads_desc: 'Leads collected by your AI agent',
+                dashboard_chat_placeholder: 'Type your message...',
+                dashboard_send: 'Send',
+                dashboard_no_leads: 'No Leads Yet',
+                dashboard_no_leads_desc: 'Start chatting with your AI bot to test lead capture. When users share their contact info, it will appear here.',
+                dashboard_welcome_message: '👋 Hello! I\'m the AI assistant for',
+                dashboard_welcome_message_end: 'How can I help you today?',
+                dashboard_get_widget: 'Get Widget Code',
+                dashboard_system_prompt: 'AI System Prompt',
+                dashboard_show_hide: 'Show/Hide',
+                
+                // Paywall
+                paywall_title: 'Upgrade to Pro',
+                paywall_desc: 'Subscribe to unlock your AI Agent and start capturing leads.',
+                paywall_button: 'View Pricing Plans',
+                
+                // Pricing
+                pricing_title: 'Simple, Transparent <span class="gradient-text">Pricing</span>',
+                pricing_subtitle: 'Choose the plan that fits your business needs',
+                pricing_starter: 'Starter',
+                pricing_starter_price: '$49',
+                pricing_starter_period: '/month',
+                pricing_starter_agent: '1 AI Agent',
+                pricing_starter_leads: '500 Leads/month',
+                pricing_starter_feature1: 'Basic Customization',
+                pricing_starter_feature2: 'Email Support',
+                pricing_subscribe: 'Subscribe Now',
+                pricing_popular: 'Most Popular',
+                pricing_pro: 'Pro',
+                pricing_pro_price: '$99',
+                pricing_pro_agent: '3 AI Agents',
+                pricing_pro_leads: 'Unlimited Leads',
+                pricing_pro_feature1: 'Advanced Customization',
+                pricing_pro_feature2: 'Priority Support',
+                pricing_pro_feature3: 'Analytics Dashboard',
+                pricing_agency: 'Agency',
+                pricing_agency_price: '$299',
+                pricing_agency_agent: '10 AI Agents',
+                pricing_agency_leads: 'Unlimited Leads',
+                pricing_agency_feature1: 'Whitelabeling',
+                pricing_agency_feature2: 'API Access',
+                pricing_agency_feature3: 'Dedicated Support',
+                pricing_agency_feature4: 'Custom Integrations'
+            },
+            ar: {
+                brand_name: 'نواة <span class="gradient-text">AI</span>',
+                nav_home: 'الرئيسية',
+                nav_services: 'الخدمات',
+                nav_pricing: 'الأسعار',
+                nav_get_started: 'ابدأ الآن',
+                footer_copyright: '© 2025 نواة AI. عندما يفكر عملك بنفسه.',
+                
+                // Landing page
+                hero_title: 'نواة AI',
+                hero_subtitle: 'عندما يفكر <span class="text-white font-semibold">عملك بنفسه</span>',
+                hero_description: 'أتمت المبيعات، التقط العملاء المحتملين، ودعم العملاء على مدار الساعة مع وكيل ذكاء اصطناعي مخصص لصناعتك—في أقل من دقيقتين.',
+                hero_cta: 'أنشئ وكيلك الذكي ←',
+                hero_secondary: 'شاهد كيف يعمل',
+                stat_setup: 'وقت الإعداد',
+                stat_availability: 'التوفر',
+                stat_industries: 'الصناعات',
+                
+                // Features
+                features_title: 'مبني من أجل <span class="gradient-text">الأعمال الحديثة</span>',
+                features_subtitle: 'كل ما تحتاجه لأتمتة تفاعلات العملاء وتنمية أعمالك',
+                feature1_title: 'إعداد فوري',
+                feature1_desc: 'لا حاجة للبرمجة. أجب على بعض الأسئلة حول عملك ووكيلك الذكي جاهز في أقل من دقيقتين.',
+                feature2_title: 'التقاط ذكي للعملاء',
+                feature2_desc: 'يجمع وكيلك الذكي أسماء العملاء وجهات الاتصال والنوايا تلقائياً أثناء المحادثات.',
+                feature3_title: 'مخصص للصناعة',
+                feature3_desc: 'مطالبات مسبقة البناء للتجارة الإلكترونية واللياقة ووكالات التسويق والمزيد.',
+                
+                // How it works
+                how_title: 'كيف <span class="gradient-text">يعمل</span>',
+                how_subtitle: 'ثلاث خطوات بسيطة لوكيلك الذكي المخصص',
+                step1_title: 'أخبرنا عن عملك',
+                step1_desc: 'أدخل اسم عملك، اختر صناعتك، وشارك منتجاتك وخدماتك وسياساتك.',
+                step2_title: 'يتعلم الذكاء الاصطناعي عملك',
+                step2_desc: 'ننشئ وكيل ذكاء اصطناعي مخصص مدرب على أفضل ممارسات صناعتك ومعرفة عملك.',
+                step3_title: 'ابدأ في تحويل العملاء',
+                step3_desc: 'وكيلك الذكي جاهز للتفاعل مع العملاء والإجابة على الأسئلة والتقاط العملاء على مدار الساعة.',
+                
+                // CTA
+                cta_title: 'مستعد لجعل عملك <span class="gradient-text">يفكر بنفسه؟</span>',
+                cta_subtitle: 'انضم إلى مئات الأعمال التي تستخدم نواة AI بالفعل لأتمتة المبيعات والدعم.',
+                cta_button: 'أنشئ وكيلك الذكي المجاني ←',
+                cta_note: 'لا حاجة لبطاقة ائتمان • الإعداد في دقيقتين',
+                
+                // Onboarding
+                onboard_step1_title: 'ما اسم عملك؟',
+                onboard_step1_subtitle: 'سيُستخدم هذا لتخصيص وكيلك الذكي',
+                onboard_step1_label: 'اسم العمل',
+                onboard_step1_placeholder: 'مثال: صالة تيكفيت، متجر ستايل هب...',
+                onboard_continue: 'متابعة ←',
+                onboard_back: '← رجوع',
+                
+                onboard_step2_title: 'اختر صناعتك',
+                onboard_step2_subtitle: 'سنخصص وكيلك الذكي لاحتياجاتك المحددة',
+                onboard_ecommerce_title: 'تجارة إلكترونية / ملابس',
+                onboard_ecommerce_desc: 'متاجر الأزياء، محلات التجزئة، البوتيكات عبر الإنترنت',
+                onboard_gym_title: 'صالة رياضية / لياقة',
+                onboard_gym_desc: 'الصالات الرياضية، استوديوهات اللياقة، التدريب الشخصي',
+                onboard_marketing_title: 'وكالة تسويق',
+                onboard_marketing_desc: 'التسويق الرقمي، تحسين محركات البحث، وكالات الإعلان',
+                onboard_other_title: 'عام / أخرى',
+                onboard_other_desc: 'أي نوع آخر من الأعمال',
+                
+                onboard_step3_title: 'أخبرنا عن عملك',
+                onboard_step3_subtitle: 'شارك أسعارك وخدماتك وأي معلومات مهمة',
+                onboard_step3_label: 'معرفة العمل',
+                onboard_step3_hint: '💡 كلما قدمت تفاصيل أكثر، كان وكيلك الذكي أذكى!',
+                onboard_submit: '🚀 أنشئ وكيلي الذكي',
+                
+                // Dashboard
+                dashboard_ai_active: 'الذكاء الاصطناعي نشط',
+                dashboard_new_agent: '+ وكيل جديد',
+                dashboard_total_leads: 'إجمالي العملاء',
+                dashboard_this_week: 'هذا الأسبوع',
+                dashboard_availability: 'التوفر',
+                dashboard_industry: 'الصناعة',
+                dashboard_bot_tester: 'اختبار الوكيل الذكي',
+                dashboard_bot_tester_desc: 'اختبر ردود وكيلك الذكي',
+                dashboard_clear_chat: 'مسح المحادثة',
+                dashboard_captured_leads: 'العملاء المسجلين',
+                dashboard_leads_desc: 'العملاء الذين جمعهم وكيلك الذكي',
+                dashboard_chat_placeholder: 'اكتب رسالتك...',
+                dashboard_send: 'إرسال',
+                dashboard_no_leads: 'لا يوجد عملاء بعد',
+                dashboard_no_leads_desc: 'ابدأ المحادثة مع وكيلك الذكي لاختبار تسجيل العملاء. عندما يشارك المستخدمون معلومات الاتصال، ستظهر هنا.',
+                dashboard_welcome_message: '👋 مرحباً! أنا مساعد الذكاء الاصطناعي لـ',
+                dashboard_welcome_message_end: 'كيف يمكنني مساعدتك اليوم؟',
+                dashboard_get_widget: 'احصل على كود الودجة',
+                dashboard_system_prompt: 'مطالبة النظام الذكي',
+                dashboard_show_hide: 'إظهار/إخفاء',
+                
+                // Paywall
+                paywall_title: 'ترقية إلى Pro',
+                paywall_desc: 'اشترك لفتح وكيلك الذكي والبدء في تسجيل العملاء.',
+                paywall_button: 'عرض خطط الأسعار',
+                
+                // Pricing
+                pricing_title: 'أسعار <span class="gradient-text">بسيطة وشفافة</span>',
+                pricing_subtitle: 'اختر الخطة التي تناسب احتياجات عملك',
+                pricing_starter: 'المبتدئ',
+                pricing_starter_price: '$49',
+                pricing_starter_period: '/شهر',
+                pricing_starter_agent: 'وكيل ذكي واحد',
+                pricing_starter_leads: '500 عميل/شهر',
+                pricing_starter_feature1: 'تخصيص أساسي',
+                pricing_starter_feature2: 'دعم عبر البريد الإلكتروني',
+                pricing_subscribe: 'اشترك الآن',
+                pricing_popular: 'الأكثر شعبية',
+                pricing_pro: 'المحترف',
+                pricing_pro_price: '$99',
+                pricing_pro_agent: '3 وكلاء أذكياء',
+                pricing_pro_leads: 'عملاء غير محدودين',
+                pricing_pro_feature1: 'تخصيص متقدم',
+                pricing_pro_feature2: 'دعم ذو أولوية',
+                pricing_pro_feature3: 'لوحة التحليلات',
+                pricing_agency: 'الوكالة',
+                pricing_agency_price: '$299',
+                pricing_agency_agent: '10 وكلاء أذكياء',
+                pricing_agency_leads: 'عملاء غير محدودين',
+                pricing_agency_feature1: 'العلامة البيضاء',
+                pricing_agency_feature2: 'وصول API',
+                pricing_agency_feature3: 'دعم مخصص',
+                pricing_agency_feature4: 'تكاملات مخصصة'
+            }
+        };
+        
+        // Language management
+        let currentLang = localStorage.getItem('nucleus-lang') || 'en';
+        
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('nucleus-lang', lang);
+            
+            // Update HTML direction
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.documentElement.lang = lang;
+            
+            // Update toggle buttons
+            document.getElementById('langEN').classList.toggle('active', lang === 'en');
+            document.getElementById('langAR').classList.toggle('active', lang === 'ar');
+            
+            // Update all translatable elements
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    el.innerHTML = translations[lang][key];
+                }
+            });
+            
+            // Update placeholder attributes
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (translations[lang] && translations[lang][key]) {
+                    el.placeholder = translations[lang][key];
+                }
+            });
+        }
+        
+        // Initialize language on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setLanguage(currentLang);
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

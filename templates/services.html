@@ -1,0 +1,329 @@
+{% extends 'base.html' %}
+
+{% block title %}خدماتنا - Nucleus AI{% endblock %}
+
+{% block nav_links %}
+<a href="/" class="text-gray-400 hover:text-white transition-colors" data-i18n="nav_home">Home</a>
+<a href="/services" class="text-gray-400 hover:text-white transition-colors" data-i18n="nav_services">Services</a>
+<a href="/pricing" class="text-gray-400 hover:text-white transition-colors" data-i18n="nav_pricing">Pricing</a>
+<a href="/onboarding" class="btn-primary px-6 py-2 rounded-full font-semibold text-sm" data-i18n="nav_get_started">Get Started</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .service-card {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .service-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+    
+    .service-card:hover::before {
+        transform: scaleX(1);
+    }
+    
+    .service-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(59, 130, 246, 0.5);
+    }
+    
+    .service-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .service-number {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        font-size: 4rem;
+        font-weight: 800;
+        color: rgba(59, 130, 246, 0.1);
+        line-height: 1;
+    }
+    
+    html[dir="rtl"] .service-number {
+        right: auto;
+        left: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="pt-24 pb-16">
+    <div class="max-w-7xl mx-auto px-6">
+        <!-- Header -->
+        <div class="text-center mb-16">
+            <span class="inline-block px-4 py-2 rounded-full text-sm font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30 mb-4" data-i18n="services_badge">
+                نظام الأتمتة الذكي
+            </span>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4" data-i18n="services_title">
+                كل خدماتنا <span class="gradient-text">في مكان واحد</span>
+            </h1>
+            <p class="text-gray-400 text-lg max-w-3xl mx-auto" data-i18n="services_subtitle">
+                باكيج متكامل بيلمس كل نقطة وجع عند صاحب البزنس: من أول جذب العميل، لحد ما يدفع، وحتى إدارة الموظفين من جوه
+            </p>
+        </div>
+        
+        <!-- Services Grid -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            <!-- Service 1: Chatbot -->
+            <div class="service-card glass-card rounded-2xl p-8">
+                <span class="service-number">01</span>
+                <div class="service-icon bg-gradient-to-br from-blue-500/20 to-cyan-500/20">
+                    💬
+                </div>
+                <h3 class="text-xl font-bold mb-3" data-i18n="service1_title">الشات بوت الشامل</h3>
+                <p class="text-gray-400 text-sm mb-4" data-i18n="service1_subtitle">Omnichannel Chatbot</p>
+                <p class="text-gray-300 mb-4" data-i18n="service1_desc">
+                    سيستم بيرد في ثواني على كل المنصات (WhatsApp, Instagram, Messenger). بيفهم العميل، بيجاوب استفساراته، بيسجل بياناته في الـ CRM أوتوماتيك، وبيعمل Follow-ups ذكية.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-400">Speed to Lead</span>
+                    <span class="px-3 py-1 rounded-full text-xs bg-blue-500/20 text-blue-400">24/7 Response</span>
+                </div>
+            </div>
+            
+            <!-- Service 2: Voice Agent -->
+            <div class="service-card glass-card rounded-2xl p-8">
+                <span class="service-number">02</span>
+                <div class="service-icon bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+                    🎙️
+                </div>
+                <h3 class="text-xl font-bold mb-3" data-i18n="service2_title">وكيل الذكاء الاصطناعي الصوتي</h3>
+                <p class="text-gray-400 text-sm mb-4" data-i18n="service2_subtitle">AI Voice Agent</p>
+                <p class="text-gray-300 mb-4" data-i18n="service2_desc">
+                    موظف استقبال ومبيعات مابينامش. بيستقبل مكالمات العملاء (Inbound) يحل مشاكلهم أو يحجز مواعيد، وكمان يعمل مكالمات بيعية (Outbound) لفلترة العملاء المحتملين.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-3 py-1 rounded-full text-xs bg-purple-500/20 text-purple-400">Inbound & Outbound</span>
+                    <span class="px-3 py-1 rounded-full text-xs bg-pink-500/20 text-pink-400">توفير التكلفة</span>
+                </div>
+            </div>
+            
+            <!-- Service 3: Proposals -->
+            <div class="service-card glass-card rounded-2xl p-8">
+                <span class="service-number">03</span>
+                <div class="service-icon bg-gradient-to-br from-green-500/20 to-emerald-500/20">
+                    📄
+                </div>
+                <h3 class="text-xl font-bold mb-3" data-i18n="service3_title">صانع عروض الأسعار اللحظي</h3>
+                <p class="text-gray-400 text-sm mb-4" data-i18n="service3_subtitle">Automated Proposals</p>
+                <p class="text-gray-300 mb-4" data-i18n="service3_desc">
+                    بمجرد ما الـ Voice Agent يخلص مكالمة، السيستم بيحلل المحادثة، يفهم العميل محتاج إيه، ويكتب Proposal مخصص ليه، ويبعته على الإيميل أو الواتس اب في نفس اللحظة.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-400">Instant Delivery</span>
+                    <span class="px-3 py-1 rounded-full text-xs bg-emerald-500/20 text-emerald-400">Professional</span>
+                </div>
+            </div>
+            
+            <!-- Service 4: Lead Generation -->
+            <div class="service-card glass-card rounded-2xl p-8">
+                <span class="service-number">04</span>
+                <div class="service-icon bg-gradient-to-br from-yellow-500/20 to-orange-500/20">
+                    🎯
+                </div>
+                <h3 class="text-xl font-bold mb-3" data-i18n="service4_title">ماكينة جلب العملاء</h3>
+                <p class="text-gray-400 text-sm mb-4" data-i18n="service4_subtitle">Lead Generation Machine</p>
+                <p class="text-gray-300 mb-4" data-i18n="service4_desc">
+                    سيستم بيشتغل في الخلفية بيسحب داتا الشركات المستهدفة (من جوجل مابس، لينكد إن)، ويبعتلهم رسايل وإيميلات مخصصة بالذكاء الاصطناعي عشان يجيبهم لحد عندك.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-3 py-1 rounded-full text-xs bg-yellow-500/20 text-yellow-400">Auto Scraping</span>
+                    <span class="px-3 py-1 rounded-full text-xs bg-orange-500/20 text-orange-400">Pipeline Full</span>
+                </div>
+            </div>
+            
+            <!-- Service 5: Content Engine -->
+            <div class="service-card glass-card rounded-2xl p-8">
+                <span class="service-number">05</span>
+                <div class="service-icon bg-gradient-to-br from-red-500/20 to-rose-500/20">
+                    🎬
+                </div>
+                <h3 class="text-xl font-bold mb-3" data-i18n="service5_title">سيستم أتمتة المحتوى والميديا</h3>
+                <p class="text-gray-400 text-sm mb-4" data-i18n="service5_subtitle">AI Content & Video Engine</p>
+                <p class="text-gray-300 mb-4" data-i18n="service5_desc">
+                    بياخد الفيديوهات الطويلة أو البودكاست، ويستخدم الـ AI عشان يقصها أوتوماتيك لـ Reels و Shorts، يضيف الكابشنز، يكتب الـ Copy، ويعمل جدولة على كل المنصات.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-3 py-1 rounded-full text-xs bg-red-500/20 text-red-400">Auto Editing</span>
+                    <span class="px-3 py-1 rounded-full text-xs bg-rose-500/20 text-rose-400">Daily Content</span>
+                </div>
+            </div>
+            
+            <!-- Service 6: Internal Knowledge -->
+            <div class="service-card glass-card rounded-2xl p-8">
+                <span class="service-number">06</span>
+                <div class="service-icon bg-gradient-to-br from-cyan-500/20 to-teal-500/20">
+                    🧠
+                </div>
+                <h3 class="text-xl font-bold mb-3" data-i18n="service6_title">مساعد الموظفين الداخلي</h3>
+                <p class="text-gray-400 text-sm mb-4" data-i18n="service6_subtitle">Internal Knowledge Retrieval</p>
+                <p class="text-gray-300 mb-4" data-i18n="service6_desc">
+                    AI Agent داخلي للموظفين متغذي بكل ملفات الشركة، سياساتها، وتفاصيل المنتجات. أي موظف عنده سؤال بيسأل البوت وبياخد الإجابة في ثانية.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-3 py-1 rounded-full text-xs bg-cyan-500/20 text-cyan-400">Fast Onboarding</span>
+                    <span class="px-3 py-1 rounded-full text-xs bg-teal-500/20 text-teal-400">Knowledge Base</span>
+                </div>
+            </div>
+            
+            <!-- Service 7: Hidden Automations -->
+            <div class="service-card glass-card rounded-2xl p-8 md:col-span-2 lg:col-span-1">
+                <span class="service-number">07</span>
+                <div class="service-icon bg-gradient-to-br from-indigo-500/20 to-violet-500/20">
+                    ⚙️
+                </div>
+                <h3 class="text-xl font-bold mb-3" data-i18n="service7_title">الأتمتة الداخلية الخفية</h3>
+                <p class="text-gray-400 text-sm mb-4" data-i18n="service7_subtitle">Hidden Internal Automations</p>
+                <p class="text-gray-300 mb-4" data-i18n="service7_desc">
+                    "الصمغ" اللي بيربط كل ده ببعضه. أول ما العميل يدفع، السيستم أوتوماتيك بيعمله فولدر على Drive، يبعتله إيميل الترحيب، يطلعله فاتورة، ويبعت تنبيه للتيم.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-3 py-1 rounded-full text-xs bg-indigo-500/20 text-indigo-400">Auto Workflows</span>
+                    <span class="px-3 py-1 rounded-full text-xs bg-violet-500/20 text-violet-400">Peace of Mind</span>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Value Proposition -->
+        <div class="mt-16 glass-card rounded-2xl p-8 md:p-12 text-center">
+            <h2 class="text-2xl md:text-3xl font-bold mb-4" data-i18n="services_value_title">
+                ده مش مجرد خدمات... ده <span class="gradient-text">"Operating System"</span> كامل لأي شركة حديثة
+            </h2>
+            <p class="text-gray-400 text-lg max-w-3xl mx-auto mb-8" data-i18n="services_value_desc">
+                كل خدمة من دي لوحدها بتوفر مئات الساعات وتزيد المبيعات. تخيل لما تجتمع كلها مع بعض!
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/pricing" class="btn-primary px-8 py-4 rounded-xl font-semibold text-lg" data-i18n="services_view_pricing">
+                    شاهد الأسعار 💰
+                </a>
+                <a href="/onboarding" class="px-8 py-4 rounded-xl font-semibold text-lg border border-gray-700 hover:border-blue-500 transition-colors" data-i18n="services_start_free">
+                    ابدأ مجاناً 🚀
+                </a>
+            </div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div class="text-center">
+                <div class="text-4xl font-bold gradient-text">500+</div>
+                <div class="text-gray-500 mt-1" data-i18n="stat_businesses">شركة تستخدمنا</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold gradient-text">10M+</div>
+                <div class="text-gray-500 mt-1" data-i18n="stat_messages">رسالة تم الرد عليها</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold gradient-text">85%</div>
+                <div class="text-gray-500 mt-1" data-i18n="stat_time_saved">توفير في الوقت</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold gradient-text">3x</div>
+                <div class="text-gray-500 mt-1" data-i18n="stat_sales_increase">زيادة في المبيعات</div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add translations for services page
+    if (typeof translations !== 'undefined') {
+        translations.en = translations.en || {};
+        translations.ar = translations.ar || {};
+        
+        // Services translations
+        translations.en.services_badge = 'Smart Automation System';
+        translations.en.services_title = 'All Our Services <span class="gradient-text">in One Place</span>';
+        translations.en.services_subtitle = 'A complete package that touches every pain point for business owners: from attracting customers, to payment, to internal employee management';
+        translations.en.service1_title = 'Comprehensive Chatbot';
+        translations.en.service1_subtitle = 'Omnichannel Chatbot';
+        translations.en.service1_desc = 'A system that responds in seconds on all platforms (WhatsApp, Instagram, Messenger). It understands customers, answers inquiries, records data in CRM automatically, and makes smart follow-ups.';
+        translations.en.service2_title = 'AI Voice Agent';
+        translations.en.service2_subtitle = 'AI Voice Agent';
+        translations.en.service2_desc = 'A receptionist and sales employee that never sleeps. Receives customer calls (Inbound), solves problems or books appointments, and makes sales calls (Outbound) to filter potential customers.';
+        translations.en.service3_title = 'Instant Proposal Generator';
+        translations.en.service3_subtitle = 'Automated Proposals';
+        translations.en.service3_desc = 'As soon as the Voice Agent finishes a call, the system analyzes the conversation, understands what the customer needs, and writes a customized Proposal sent via email or WhatsApp instantly.';
+        translations.en.service4_title = 'Lead Generation Machine';
+        translations.en.service4_subtitle = 'Lead Generation Machine';
+        translations.en.service4_desc = 'A system working in the background that pulls target company data (from Google Maps, LinkedIn) and sends them customized messages via AI to bring them to you.';
+        translations.en.service5_title = 'Content & Media Automation';
+        translations.en.service5_subtitle = 'AI Content & Video Engine';
+        translations.en.service5_desc = 'Takes long videos or podcasts and uses AI to automatically cut them into Reels and Shorts, adds captions, writes copy, and schedules across all platforms.';
+        translations.en.service6_title = 'Internal Knowledge Assistant';
+        translations.en.service6_subtitle = 'Internal Knowledge Retrieval';
+        translations.en.service6_desc = 'An internal AI Agent for employees, fed with all company files, policies, and product details. Any employee with a question asks the bot and gets an answer instantly.';
+        translations.en.service7_title = 'Hidden Internal Automations';
+        translations.en.service7_subtitle = 'Hidden Internal Automations';
+        translations.en.service7_desc = 'The "glue" that connects everything. Once a customer pays, the system automatically creates a Drive folder, sends a welcome email, issues an invoice, and notifies the team.';
+        translations.en.services_value_title = 'This is not just services... it\'s a complete <span class="gradient-text">"Operating System"</span> for any modern company';
+        translations.en.services_value_desc = 'Each service alone saves hundreds of hours and increases sales. Imagine when they all come together!';
+        translations.en.services_view_pricing = 'View Pricing 💰';
+        translations.en.services_start_free = 'Start Free 🚀';
+        translations.en.stat_businesses = 'Companies using us';
+        translations.en.stat_messages = 'Messages responded to';
+        translations.en.stat_time_saved = 'Time saved';
+        translations.en.stat_sales_increase = 'Sales increase';
+        translations.en.nav_home = 'Home';
+        translations.en.nav_services = 'Services';
+        
+        translations.ar.services_badge = 'نظام الأتمتة الذكي';
+        translations.ar.services_title = 'كل خدماتنا <span class="gradient-text">في مكان واحد</span>';
+        translations.ar.services_subtitle = 'باكيج متكامل بيلمس كل نقطة وجع عند صاحب البزنس: من أول جذب العميل، لحد ما يدفع، وحتى إدارة الموظفين من جوه';
+        translations.ar.service1_title = 'الشات بوت الشامل';
+        translations.ar.service1_subtitle = 'Omnichannel Chatbot';
+        translations.ar.service1_desc = 'سيستم بيرد في ثواني على كل المنصات (WhatsApp, Instagram, Messenger). بيفهم العميل، بيجاوب استفساراته، بيسجل بياناته في الـ CRM أوتوماتيك، وبيعمل Follow-ups ذكية.';
+        translations.ar.service2_title = 'وكيل الذكاء الاصطناعي الصوتي';
+        translations.ar.service2_subtitle = 'AI Voice Agent';
+        translations.ar.service2_desc = 'موظف استقبال ومبيعات مابينامش. بيستقبل مكالمات العملاء (Inbound) يحل مشاكلهم أو يحجز مواعيد، وكمان يعمل مكالمات بيعية (Outbound) لفلترة العملاء المحتملين.';
+        translations.ar.service3_title = 'صانع عروض الأسعار اللحظي';
+        translations.ar.service3_subtitle = 'Automated Proposals';
+        translations.ar.service3_desc = 'بمجرد ما الـ Voice Agent يخلص مكالمة، السيستم بيحلل المحادثة، يفهم العميل محتاج إيه، ويكتب Proposal مخصص ليه، ويبعته على الإيميل أو الواتس اب في نفس اللحظة.';
+        translations.ar.service4_title = 'ماكينة جلب العملاء';
+        translations.ar.service4_subtitle = 'Lead Generation Machine';
+        translations.ar.service4_desc = 'سيستم بيشتغل في الخلفية بيسحب داتا الشركات المستهدفة (من جوجل مابس، لينكد إن)، ويبعتلهم رسايل وإيميلات مخصصة بالذكاء الاصطناعي عشان يجيبهم لحد عندك.';
+        translations.ar.service5_title = 'سيستم أتمتة المحتوى والميديا';
+        translations.ar.service5_subtitle = 'AI Content & Video Engine';
+        translations.ar.service5_desc = 'بياخد الفيديوهات الطويلة أو البودكاست، ويستخدم الـ AI عشان يقصها أوتوماتيك لـ Reels و Shorts، يضيف الكابشنز، يكتب الـ Copy، ويعمل جدولة على كل المنصات.';
+        translations.ar.service6_title = 'مساعد الموظفين الداخلي';
+        translations.ar.service6_subtitle = 'Internal Knowledge Retrieval';
+        translations.ar.service6_desc = 'AI Agent داخلي للموظفين متغذي بكل ملفات الشركة، سياساتها، وتفاصيل المنتجات. أي موظف عنده سؤال بيسأل البوت وبياخد الإجابة في ثانية.';
+        translations.ar.service7_title = 'الأتمتة الداخلية الخفية';
+        translations.ar.service7_subtitle = 'Hidden Internal Automations';
+        translations.ar.service7_desc = '"الصمغ" اللي بيربط كل ده ببعضه. أول ما العميل يدفع، السيستم أوتوماتيك بيعمله فولدر على Drive، يبعتله إيميل الترحيب، يطلعله فاتورة، ويبعت تنبيه للتيم.';
+        translations.ar.services_value_title = 'ده مش مجرد خدمات... ده <span class="gradient-text">"Operating System"</span> كامل لأي شركة حديثة';
+        translations.ar.services_value_desc = 'كل خدمة من دي لوحدها بتوفر مئات الساعات وتزيد المبيعات. تخيل لما تجتمع كلها مع بعض!';
+        translations.ar.services_view_pricing = 'شاهد الأسعار 💰';
+        translations.ar.services_start_free = 'ابدأ مجاناً 🚀';
+        translations.ar.stat_businesses = 'شركة تستخدمنا';
+        translations.ar.stat_messages = 'رسالة تم الرد عليها';
+        translations.ar.stat_time_saved = 'توفير في الوقت';
+        translations.ar.stat_sales_increase = 'زيادة في المبيعات';
+        translations.ar.nav_home = 'الرئيسية';
+        translations.ar.nav_services = 'الخدمات';
+    }
+</script>
+{% endblock %}

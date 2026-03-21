@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Your AI Agent - Nucleus AI{% endblock %}
+
+{% block nav_links %}
+<a href="/" class="text-gray-400 hover:text-white transition-colors" data-i18n="nav_features">Home</a>
+<a href="/pricing" class="text-gray-400 hover:text-white transition-colors" data-i18n="nav_pricing">Pricing</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-input {
+        background: rgba(31, 41, 55, 0.8);
+        border: 1px solid rgba(75, 85, 99, 0.5);
+        transition: all 0.3s ease;
+    }
+    
+    .form-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        outline: none;
+    }
+    
+    .form-input::placeholder {
+        color: #6b7280;
+    }
+    
+    .step-indicator {
+        transition: all 0.3s ease;
+    }
+    
+    .step-indicator.active {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    }
+    
+    .step-indicator.completed {
+        background: var(--accent-color);
+    }
+    
+    .industry-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .industry-card:hover {
+        border-color: rgba(59, 130, 246, 0.5);
+        transform: translateY(-2px);
+    }
+    
+    .industry-card.selected {
+        border-color: var(--primary-color);
+        background: rgba(59, 130, 246, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pt-24 pb-12 min-h-screen flex items-center justify-center">
+    <div class="max-w-2xl w-full mx-6">
+        <!-- Progress Steps -->
+        <div class="flex items-center justify-center mb-10">
+            <div class="flex items-center">
+                <div id="step1Dot" class="step-indicator active w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold">1</div>
+                <div id="line1" class="w-16 h-1 bg-gray-700 mx-2 rounded transition-all"></div>
+                <div id="step2Dot" class="step-indicator w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-sm font-semibold">2</div>
+                <div id="line2" class="w-16 h-1 bg-gray-700 mx-2 rounded transition-all"></div>
+                <div id="step3Dot" class="step-indicator w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-sm font-semibold">3</div>
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="glass-card rounded-3xl p-8 md:p-10">
+            <form id="onboardingForm" method="POST" action="/onboarding">
+                <!-- Step 1: Business Name -->
+                <div id="formStep1" class="form-step">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl font-bold mb-2" data-i18n="onboard_step1_title">What's your business name?</h2>
+                        <p class="text-gray-400" data-i18n="onboard_step1_subtitle">This will be used to personalize your AI agent</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2" data-i18n="onboard_step1_label">Business Name</label>
+                            <input 
+                                type="text" 
+                                name="business_name" 
+                                id="businessName"
+                                class="form-input w-full px-4 py-4 rounded-xl text-white text-lg"
+                                data-i18n-placeholder="onboard_step1_placeholder"
+                                placeholder="e.g., TechFit Gym, StyleHub Store..."
+                                required
+                            >
+                        </div>
+                        {% if error %}
+                        <p class="text-red-400 text-sm">{{ error }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mt-8">
+                        <button type="button" onclick="nextStep(1)" class="btn-primary w-full py-4 rounded-xl font-semibold text-lg" data-i18n="onboard_continue">
+                            Continue →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Industry Selection -->
+                <div id="formStep2" class="form-step hidden">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl font-bold mb-2" data-i18n="onboard_step2_title">Select your industry</h2>
+                        <p class="text-gray-400" data-i18n="onboard_step2_subtitle">We'll customize your AI agent for your specific needs</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="industry-card glass-card rounded-xl p-5" data-industry="E-commerce/Clothing" onclick="selectIndustry(this)">
+                            <div class="text-3xl mb-3">🛍️</div>
+                            <h3 class="font-semibold mb-1" data-i18n="onboard_ecommerce_title">E-commerce / Clothing</h3>
+                            <p class="text-gray-500 text-sm" data-i18n="onboard_ecommerce_desc">Fashion stores, retail shops, online boutiques</p>
+                        </div>
+                        
+                        <div class="industry-card glass-card rounded-xl p-5" data-industry="Gym/Fitness" onclick="selectIndustry(this)">
+                            <div class="text-3xl mb-3">💪</div>
+                            <h3 class="font-semibold mb-1" data-i18n="onboard_gym_title">Gym / Fitness</h3>
+                            <p class="text-gray-500 text-sm" data-i18n="onboard_gym_desc">Gyms, fitness studios, personal training</p>
+                        </div>
+                        
+                        <div class="industry-card glass-card rounded-xl p-5" data-industry="Marketing Agency" onclick="selectIndustry(this)">
+                            <div class="text-3xl mb-3">📈</div>
+                            <h3 class="font-semibold mb-1" data-i18n="onboard_marketing_title">Marketing Agency</h3>
+                            <p class="text-gray-500 text-sm" data-i18n="onboard_marketing_desc">Digital marketing, SEO, advertising agencies</p>
+                        </div>
+                        
+                        <div class="industry-card glass-card rounded-xl p-5" data-industry="Generic/Other" onclick="selectIndustry(this)">
+                            <div class="text-3xl mb-3">🏢</div>
+                            <h3 class="font-semibold mb-1" data-i18n="onboard_other_title">Generic / Other</h3>
+                            <p class="text-gray-500 text-sm" data-i18n="onboard_other_desc">Any other business type</p>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" name="industry" id="industryInput" value="">
+                    
+                    <div class="mt-8 flex gap-4">
+                        <button type="button" onclick="prevStep(2)" class="flex-1 py-4 rounded-xl font-semibold border border-gray-700 hover:border-gray-500 transition-colors" data-i18n="onboard_back">
+                            ← Back
+                        </button>
+                        <button type="button" onclick="nextStep(2)" class="btn-primary flex-1 py-4 rounded-xl font-semibold" data-i18n="onboard_continue">
+                            Continue →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Business Knowledge -->
+                <div id="formStep3" class="form-step hidden">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl font-bold mb-2" data-i18n="onboard_step3_title">Tell us about your business</h2>
+                        <p class="text-gray-400" data-i18n="onboard_step3_subtitle">Share your prices, services, and any important information</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2" data-i18n="onboard_step3_label">Business Knowledge</label>
+                        <textarea 
+                            name="context_data" 
+                            id="contextData"
+                            class="form-input w-full px-4 py-4 rounded-xl text-white h-48 resize-none"
+                            placeholder="Example:
+- Products: Running shoes ($89), Gym memberships ($49/mo)
+- Services: Personal training sessions ($75/hr)
+- Policies: 30-day returns, free shipping over $100
+- Special offers: 20% off first membership
+- Hours: Mon-Fri 6am-10pm, Sat-Sun 8am-8pm"
+                        ></textarea>
+                        <p class="text-gray-500 text-sm mt-2" data-i18n="onboard_step3_hint">💡 The more details you provide, the smarter your AI agent will be!</p>
+                    </div>
+                    
+                    <div class="mt-8 flex gap-4">
+                        <button type="button" onclick="prevStep(3)" class="flex-1 py-4 rounded-xl font-semibold border border-gray-700 hover:border-gray-500 transition-colors" data-i18n="onboard_back">
+                            ← Back
+                        </button>
+                        <button type="submit" class="btn-primary flex-1 py-4 rounded-xl font-semibold" data-i18n="onboard_submit">
+                            🚀 Create My AI Agent
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Trust Indicators -->
+        <div class="mt-8 flex items-center justify-center gap-8 text-gray-500 text-sm">
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                </svg>
+                <span>Secure & Private</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span>2-min Setup</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentStep = 1;
+    
+    function updateStepIndicators(step) {
+        // Update dots
+        for (let i = 1; i <= 3; i++) {
+            const dot = document.getElementById(`step${i}Dot`);
+            const line = document.getElementById(`line${i-1}`);
+            
+            if (i < step) {
+                dot.classList.remove('active');
+                dot.classList.add('completed');
+                if (line) line.style.background = 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))';
+            } else if (i === step) {
+                dot.classList.add('active');
+                dot.classList.remove('completed');
+            } else {
+                dot.classList.remove('active', 'completed');
+                if (line) line.style.background = '#374151';
+            }
+        }
+    }
+    
+    function showStep(step) {
+        // Hide all steps
+        document.querySelectorAll('.form-step').forEach(el => el.classList.add('hidden'));
+        // Show current step
+        document.getElementById(`formStep${step}`).classList.remove('hidden');
+        updateStepIndicators(step);
+        currentStep = step;
+    }
+    
+    function nextStep(current) {
+        // Validation
+        if (current === 1) {
+            const businessName = document.getElementById('businessName').value.trim();
+            if (!businessName) {
+                alert(currentLang === 'ar' ? 'الرجاء إدخال اسم العمل' : 'Please enter your business name');
+                return;
+            }
+        }
+        
+        if (current === 2) {
+            const industry = document.getElementById('industryInput').value;
+            if (!industry) {
+                alert(currentLang === 'ar' ? 'الرجاء اختيار صناعة' : 'Please select an industry');
+                return;
+            }
+        }
+        
+        if (current < 3) {
+            showStep(current + 1);
+        }
+    }
+    
+    function prevStep(current) {
+        if (current > 1) {
+            showStep(current - 1);
+        }
+    }
+    
+    function selectIndustry(element) {
+        // Remove selection from all
+        document.querySelectorAll('.industry-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // Add selection to clicked
+        element.classList.add('selected');
+        
+        // Update hidden input
+        document.getElementById('industryInput').value = element.dataset.industry;
+    }
+    
+    // Form submission
+    document.getElementById('onboardingForm').addEventListener('submit', function(e) {
+        const contextData = document.getElementById('contextData').value.trim();
+        // Allow empty context data - it's optional
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+
+{% block title %}Nucleus AI - When Your Business Thinks for Itself{% endblock %}
+
+{% block extra_css %}
+<style>
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(180deg); }
+    }
+    
+    @keyframes orbit {
+        from { transform: rotate(0deg) translateX(50px) rotate(0deg); }
+        to { transform: rotate(360deg) translateX(50px) rotate(-360deg); }
+    }
+    
+    @keyframes orbit-reverse {
+        from { transform: rotate(0deg) translateX(70px) rotate(0deg); }
+        to { transform: rotate(-360deg) translateX(70px) rotate(360deg); }
+    }
+    
+    .animate-float {
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    .nucleus-icon {
+        position: relative;
+        width: 120px;
+        height: 120px;
+    }
+    
+    .nucleus-core {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 24px;
+        height: 24px;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border-radius: 50%;
+        box-shadow: 0 0 30px rgba(59, 130, 246, 0.8);
+    }
+    
+    .orbit-ring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        border: 1px solid rgba(59, 130, 246, 0.4);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    .electron {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: var(--primary-color);
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+    }
+    
+    .feature-card {
+        transition: all 0.3s ease;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(59, 130, 246, 0.5);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative min-h-screen flex items-center justify-center pt-20">
+    <div class="max-w-7xl mx-auto px-6 py-20 text-center relative z-10">
+        <!-- Floating Nucleus Icon -->
+        <div class="flex justify-center mb-8">
+            <div class="nucleus-icon animate-float">
+                <div class="orbit-ring" style="width: 100px; height: 100px;"></div>
+                <div class="orbit-ring" style="width: 140px; height: 140px;"></div>
+                <div class="orbit-ring" style="width: 180px; height: 180px;"></div>
+                <div class="nucleus-core"></div>
+                <!-- Electrons -->
+                <div class="electron animate-orbit" style="top: 50%; left: 50%; transform-origin: -25px 0;"></div>
+                <div class="electron animate-orbit-reverse" style="top: 50%; left: 50%; transform-origin: -35px 0;"></div>
+            </div>
+        </div>
+        
+        <!-- Main Headline -->
+        <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            <span class="gradient-text" data-i18n="hero_title">Nucleus AI</span>
+        </h1>
+        <p class="text-2xl md:text-3xl text-gray-300 mb-4 font-light" data-i18n="hero_subtitle">
+            When Your Business <span class="text-white font-semibold">Thinks for Itself</span>
+        </p>
+        <p class="text-lg text-gray-400 max-w-2xl mx-auto mb-10" data-i18n="hero_description">
+            Automate your sales, capture leads, and support customers 24/7 with a custom AI agent tailored to your industry—in under 2 minutes.
+        </p>
+        
+        <!-- CTA Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <a href="/onboarding" class="btn-primary px-8 py-4 rounded-full font-semibold text-lg animate-pulse-glow" data-i18n="hero_cta">
+                Create Your AI Agent →
+            </a>
+            <a href="#how-it-works" class="px-8 py-4 rounded-full font-semibold text-lg border border-gray-700 hover:border-blue-500 transition-colors" data-i18n="hero_secondary">
+                See How It Works
+            </a>
+        </div>
+        
+        <!-- Stats -->
+        <div class="mt-16 grid grid-cols-3 gap-8 max-w-3xl mx-auto">
+            <div class="text-center">
+                <div class="text-3xl font-bold gradient-text">2 min</div>
+                <div class="text-gray-500 text-sm" data-i18n="stat_setup">Setup Time</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold gradient-text">24/7</div>
+                <div class="text-gray-500 text-sm" data-i18n="stat_availability">Availability</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold gradient-text">100+</div>
+                <div class="text-gray-500 text-sm" data-i18n="stat_industries">Industries</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Decorative Elements -->
+    <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2">
+        <div class="w-6 h-10 border-2 border-gray-600 rounded-full flex justify-center pt-2">
+            <div class="w-1 h-3 bg-gray-400 rounded-full animate-bounce"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="py-24 relative">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-4" data-i18n="features_title">
+                Built for <span class="gradient-text">Modern Businesses</span>
+            </h2>
+            <p class="text-gray-400 text-lg max-w-2xl mx-auto" data-i18n="features_subtitle">
+                Everything you need to automate customer interactions and grow your business
+            </p>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Feature 1 -->
+            <div class="feature-card glass-card rounded-2xl p-8">
+                <div class="w-14 h-14 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-xl flex items-center justify-center mb-6">
+                    <svg class="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold mb-3" data-i18n="feature1_title">Instant Setup</h3>
+                <p class="text-gray-400" data-i18n="feature1_desc">
+                    No coding required. Answer a few questions about your business and your AI agent is ready in under 2 minutes.
+                </p>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div class="feature-card glass-card rounded-2xl p-8">
+                <div class="w-14 h-14 bg-gradient-to-br from-cyan-500/20 to-green-500/20 rounded-xl flex items-center justify-center mb-6">
+                    <svg class="w-7 h-7 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold mb-3" data-i18n="feature2_title">Smart Lead Capture</h3>
+                <p class="text-gray-400" data-i18n="feature2_desc">
+                    Your AI agent naturally collects customer names, contacts, and intents during conversations—automatically.
+                </p>
+            </div>
+            
+            <!-- Feature 3 -->
+            <div class="feature-card glass-card rounded-2xl p-8">
+                <div class="w-14 h-14 bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-xl flex items-center justify-center mb-6">
+                    <svg class="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold mb-3" data-i18n="feature3_title">Industry-Tailored</h3>
+                <p class="text-gray-400" data-i18n="feature3_desc">
+                    Pre-built prompts for E-commerce, Fitness, Marketing Agencies, and more—optimized for your specific industry.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section id="how-it-works" class="py-24 relative bg-gray-900/50">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-4" data-i18n="how_title">
+                How It <span class="gradient-text">Works</span>
+            </h2>
+            <p class="text-gray-400 text-lg" data-i18n="how_subtitle">
+                Three simple steps to your custom AI agent
+            </p>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Step 1 -->
+            <div class="relative">
+                <div class="glass-card rounded-2xl p-8 h-full">
+                    <div class="text-6xl font-bold text-gray-800 mb-4">01</div>
+                    <h3 class="text-xl font-semibold mb-3" data-i18n="step1_title">Tell Us About Your Business</h3>
+                    <p class="text-gray-400" data-i18n="step1_desc">
+                        Enter your business name, select your industry, and share your products, services, and policies.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Step 2 -->
+            <div class="relative md:mt-8">
+                <div class="glass-card rounded-2xl p-8 h-full">
+                    <div class="text-6xl font-bold text-gray-800 mb-4">02</div>
+                    <h3 class="text-xl font-semibold mb-3" data-i18n="step2_title">AI Learns Your Business</h3>
+                    <p class="text-gray-400" data-i18n="step2_desc">
+                        We generate a custom AI agent trained on your industry best practices and business knowledge.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Step 3 -->
+            <div class="relative md:mt-16">
+                <div class="glass-card rounded-2xl p-8 h-full">
+                    <div class="text-6xl font-bold text-gray-800 mb-4">03</div>
+                    <h3 class="text-xl font-semibold mb-3" data-i18n="step3_title">Start Converting Leads</h3>
+                    <p class="text-gray-400" data-i18n="step3_desc">
+                        Your AI agent is ready to engage customers, answer questions, and capture leads 24/7.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-12">
+            <a href="/onboarding" class="btn-primary inline-block px-8 py-4 rounded-full font-semibold text-lg" data-i18n="hero_cta">
+                Get Started Now →
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Industries Section -->
+<section class="py-24 relative">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold mb-4" data-i18n="features_title">
+                Built for <span class="gradient-text">Every Industry</span>
+            </h2>
+            <p class="text-gray-400 text-lg" data-i18n="features_subtitle">
+                Specialized prompts and workflows for different business types
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <!-- Industry Cards -->
+            <div class="glass-card rounded-xl p-6 text-center hover:border-blue-500/50 transition-colors">
+                <div class="text-4xl mb-4">🛍️</div>
+                <h3 class="font-semibold" data-i18n="onboard_ecommerce_title">E-commerce</h3>
+                <p class="text-gray-500 text-sm mt-2" data-i18n="onboard_ecommerce_desc">Fashion & Retail</p>
+            </div>
+            
+            <div class="glass-card rounded-xl p-6 text-center hover:border-cyan-500/50 transition-colors">
+                <div class="text-4xl mb-4">💪</div>
+                <h3 class="font-semibold" data-i18n="onboard_gym_title">Fitness</h3>
+                <p class="text-gray-500 text-sm mt-2" data-i18n="onboard_gym_desc">Gyms & Studios</p>
+            </div>
+            
+            <div class="glass-card rounded-xl p-6 text-center hover:border-green-500/50 transition-colors">
+                <div class="text-4xl mb-4">📈</div>
+                <h3 class="font-semibold" data-i18n="onboard_marketing_title">Marketing</h3>
+                <p class="text-gray-500 text-sm mt-2" data-i18n="onboard_marketing_desc">Agencies & Consultants</p>
+            </div>
+            
+            <div class="glass-card rounded-xl p-6 text-center hover:border-purple-500/50 transition-colors">
+                <div class="text-4xl mb-4">🏢</div>
+                <h3 class="font-semibold" data-i18n="onboard_other_title">Other</h3>
+                <p class="text-gray-500 text-sm mt-2">Any Business Type</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-24 relative">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+        <div class="glass-card rounded-3xl p-12 animate-pulse-glow">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4" data-i18n="cta_title">
+                Ready to Let Your Business <span class="gradient-text">Think for Itself?</span>
+            </h2>
+            <p class="text-gray-400 text-lg mb-8 max-w-2xl mx-auto" data-i18n="cta_subtitle">
+                Join hundreds of businesses already using Nucleus AI to automate their sales and support.
+            </p>
+            <a href="/onboarding" class="btn-primary inline-block px-10 py-4 rounded-full font-semibold text-lg" data-i18n="cta_button">
+                Create Your Free AI Agent →
+            </a>
+            <p class="text-gray-600 text-sm mt-4" data-i18n="cta_note">No credit card required • Setup in 2 minutes</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+    
+    // Parallax effect for nucleus icon
+    document.addEventListener('mousemove', (e) => {
+        const icon = document.querySelector('.nucleus-icon');
+        if (icon) {
+            const x = (window.innerWidth / 2 - e.pageX) / 50;
+            const y = (window.innerHeight / 2 - e.pageY) / 50;
+            icon.style.transform = `translate(${x}px, ${y}px)`;
+        }
+    });
+</script>
+{% endblock %}

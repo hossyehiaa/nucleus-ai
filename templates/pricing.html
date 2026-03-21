@@ -1,0 +1,479 @@
+{% extends 'base.html' %}
+
+{% block title %}الأسعار - Nucleus AI{% endblock %}
+
+{% block nav_links %}
+<a href="/" class="text-gray-400 hover:text-white transition-colors" data-i18n="nav_home">Home</a>
+<a href="/services" class="text-gray-400 hover:text-white transition-colors" data-i18n="nav_services">Services</a>
+<a href="/onboarding" class="btn-primary px-6 py-2 rounded-full font-semibold text-sm" data-i18n="nav_get_started">Get Started</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pricing-card {
+        transition: all 0.3s ease;
+    }
+    
+    .pricing-card:hover {
+        transform: translateY(-10px);
+    }
+    
+    .pricing-card.popular {
+        border: 2px solid var(--primary-color);
+        position: relative;
+    }
+    
+    .pricing-card.popular::before {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: inherit;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        z-index: -1;
+        opacity: 0.5;
+        filter: blur(20px);
+    }
+    
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+    }
+    
+    .feature-item svg {
+        flex-shrink: 0;
+    }
+    
+    .payment-method {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .payment-method:hover {
+        transform: scale(1.05);
+        border-color: var(--primary-color);
+    }
+    
+    .payment-method.selected {
+        border-color: var(--primary-color);
+        background: rgba(59, 130, 246, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="pt-24 pb-16">
+    <div class="max-w-7xl mx-auto px-6">
+        <!-- Header -->
+        <div class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4" data-i18n="pricing_title">
+                أسعار <span class="gradient-text">بسيطة وشفافة</span>
+            </h1>
+            <p class="text-gray-400 text-lg max-w-2xl mx-auto" data-i18n="pricing_subtitle">
+                اختر الباقة اللي تناسب احتياجات شركتك
+            </p>
+        </div>
+        
+        <!-- Pricing Cards -->
+        <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
+            
+            <!-- Starter Plan -->
+            <div class="pricing-card glass-card rounded-2xl p-8">
+                <div class="text-center mb-8">
+                    <h3 class="text-xl font-semibold mb-2" data-i18n="pricing_starter">Starter</h3>
+                    <div class="flex items-baseline justify-center gap-1">
+                        <span class="text-5xl font-bold">1,500</span>
+                        <span class="text-gray-400">ج.م/شهر</span>
+                    </div>
+                    <p class="text-gray-500 text-sm mt-2">~ $30/month</p>
+                </div>
+                
+                <ul class="space-y-4 mb-8">
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">وكيل ذكي واحد</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">500 عميل محتمل/شهر</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">شات بوت واتساب</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">تقارير أساسية</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">دعم عبر الواتساب</span>
+                    </li>
+                </ul>
+                
+                <button onclick="selectPlan('starter', 1500)" class="w-full py-4 rounded-xl font-semibold border border-gray-600 hover:border-blue-500 hover:bg-blue-500/10 transition-all" data-i18n="pricing_subscribe">
+                    اشترك الآن
+                </button>
+            </div>
+            
+            <!-- Pro Plan (Popular) -->
+            <div class="pricing-card popular glass-card rounded-2xl p-8">
+                <div class="absolute -top-4 left-1/2 -translate-x-1/2">
+                    <span class="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm font-semibold px-4 py-1 rounded-full">
+                        الأكثر طلباً 🔥
+                    </span>
+                </div>
+                
+                <div class="text-center mb-8 pt-4">
+                    <h3 class="text-xl font-semibold mb-2" data-i18n="pricing_pro">Pro</h3>
+                    <div class="flex items-baseline justify-center gap-1">
+                        <span class="text-5xl font-bold gradient-text">3,500</span>
+                        <span class="text-gray-400">ج.م/شهر</span>
+                    </div>
+                    <p class="text-gray-500 text-sm mt-2">~ $70/month</p>
+                </div>
+                
+                <ul class="space-y-4 mb-8">
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">3 وكلاء أذكياء</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">عملاء غير محدودين ♾️</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">شات بوت + صانع عروض الأسعار</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">تقارير متقدمة + تحليلات</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">دعم ذو أولوية</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">تكامل مع أنظمة أخرى</span>
+                    </li>
+                </ul>
+                
+                <button onclick="selectPlan('pro', 3500)" class="btn-primary w-full py-4 rounded-xl font-semibold" data-i18n="pricing_subscribe">
+                    اشترك الآن
+                </button>
+            </div>
+            
+            <!-- Agency Plan -->
+            <div class="pricing-card glass-card rounded-2xl p-8">
+                <div class="text-center mb-8">
+                    <h3 class="text-xl font-semibold mb-2" data-i18n="pricing_agency">Agency</h3>
+                    <div class="flex items-baseline justify-center gap-1">
+                        <span class="text-5xl font-bold">10,000</span>
+                        <span class="text-gray-400">ج.م/شهر</span>
+                    </div>
+                    <p class="text-gray-500 text-sm mt-2">~ $200/month</p>
+                </div>
+                
+                <ul class="space-y-4 mb-8">
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">10 وكلاء أذكياء</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">كل مميزات Pro</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">وكيل صوتي (Voice Agent)</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">Whitelabeling (العلامة البيضاء)</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">API Access</span>
+                    </li>
+                    <li class="feature-item">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span class="text-gray-300">دعم مخصص 24/7</span>
+                    </li>
+                </ul>
+                
+                <button onclick="selectPlan('agency', 10000)" class="w-full py-4 rounded-xl font-semibold border border-gray-600 hover:border-blue-500 hover:bg-blue-500/10 transition-all" data-i18n="pricing_subscribe">
+                    اشترك الآن
+                </button>
+            </div>
+        </div>
+        
+        <!-- Payment Modal -->
+        <div id="paymentModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+            <div class="glass-card rounded-2xl p-8 max-w-md w-full">
+                <div class="text-center mb-6">
+                    <h3 class="text-2xl font-bold mb-2">اختر طريقة الدفع</h3>
+                    <p class="text-gray-400">الباقة: <span id="selectedPlanName" class="text-blue-400 font-semibold"></span></p>
+                    <p class="text-2xl font-bold mt-2"><span id="selectedPlanPrice"></span> ج.م/شهر</p>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <!-- Instapay -->
+                    <div class="payment-method glass-card rounded-xl p-4 text-center" onclick="selectPayment('instapay')">
+                        <div class="text-4xl mb-2">💳</div>
+                        <h4 class="font-semibold">Instapay</h4>
+                        <p class="text-gray-500 text-xs mt-1">تحويل فوري</p>
+                    </div>
+                    
+                    <!-- Vodafone Cash -->
+                    <div class="payment-method glass-card rounded-xl p-4 text-center" onclick="selectPayment('vodafone')">
+                        <div class="text-4xl mb-2">📱</div>
+                        <h4 class="font-semibold">Vodafone Cash</h4>
+                        <p class="text-gray-500 text-xs mt-1">محفظة فودافون</p>
+                    </div>
+                </div>
+                
+                <!-- Payment Details -->
+                <div id="paymentDetails" class="hidden mb-6">
+                    <div class="bg-gray-800/50 rounded-xl p-4">
+                        <p class="text-gray-400 text-sm mb-2">رقم الحساب / المحفظة:</p>
+                        <p class="text-2xl font-bold text-center" id="paymentNumber">01012345678</p>
+                        <p class="text-gray-400 text-xs text-center mt-2" id="paymentName">اسم الحساب: Nucleus AI</p>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button onclick="closePaymentModal()" class="flex-1 py-3 rounded-xl border border-gray-700 hover:border-gray-500 transition-colors">
+                        إلغاء
+                    </button>
+                    <button onclick="confirmPayment()" class="flex-1 btn-primary py-3 rounded-xl font-semibold">
+                        تأكيد الدفع
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Features Comparison -->
+        <div class="mt-16 glass-card rounded-2xl p-8">
+            <h2 class="text-2xl font-bold text-center mb-8">مقارنة المميزات</h2>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="text-left py-4 px-4">الميزة</th>
+                            <th class="text-center py-4 px-4">Starter</th>
+                            <th class="text-center py-4 px-4 text-blue-400">Pro</th>
+                            <th class="text-center py-4 px-4">Agency</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-300">
+                        <tr class="border-b border-gray-800">
+                            <td class="py-4 px-4">عدد الوكلاء الأذكياء</td>
+                            <td class="text-center py-4 px-4">1</td>
+                            <td class="text-center py-4 px-4 text-blue-400">3</td>
+                            <td class="text-center py-4 px-4">10</td>
+                        </tr>
+                        <tr class="border-b border-gray-800">
+                            <td class="py-4 px-4">الشات بوت الشامل</td>
+                            <td class="text-center py-4 px-4">✅</td>
+                            <td class="text-center py-4 px-4 text-blue-400">✅</td>
+                            <td class="text-center py-4 px-4">✅</td>
+                        </tr>
+                        <tr class="border-b border-gray-800">
+                            <td class="py-4 px-4">صانع عروض الأسعار</td>
+                            <td class="text-center py-4 px-4">❌</td>
+                            <td class="text-center py-4 px-4 text-blue-400">✅</td>
+                            <td class="text-center py-4 px-4">✅</td>
+                        </tr>
+                        <tr class="border-b border-gray-800">
+                            <td class="py-4 px-4">الوكيل الصوتي</td>
+                            <td class="text-center py-4 px-4">❌</td>
+                            <td class="text-center py-4 px-4 text-blue-400">❌</td>
+                            <td class="text-center py-4 px-4">✅</td>
+                        </tr>
+                        <tr class="border-b border-gray-800">
+                            <td class="py-4 px-4">ماكينة جلب العملاء</td>
+                            <td class="text-center py-4 px-4">❌</td>
+                            <td class="text-center py-4 px-4 text-blue-400">✅</td>
+                            <td class="text-center py-4 px-4">✅</td>
+                        </tr>
+                        <tr class="border-b border-gray-800">
+                            <td class="py-4 px-4">أتمتة المحتوى</td>
+                            <td class="text-center py-4 px-4">❌</td>
+                            <td class="text-center py-4 px-4 text-blue-400">❌</td>
+                            <td class="text-center py-4 px-4">✅</td>
+                        </tr>
+                        <tr class="border-b border-gray-800">
+                            <td class="py-4 px-4">Whitelabeling</td>
+                            <td class="text-center py-4 px-4">❌</td>
+                            <td class="text-center py-4 px-4 text-blue-400">❌</td>
+                            <td class="text-center py-4 px-4">✅</td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 px-4">API Access</td>
+                            <td class="text-center py-4 px-4">❌</td>
+                            <td class="text-center py-4 px-4 text-blue-400">❌</td>
+                            <td class="text-center py-4 px-4">✅</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- FAQ -->
+        <div class="mt-16 max-w-3xl mx-auto">
+            <h2 class="text-2xl font-bold text-center mb-10">أسئلة شائعة</h2>
+            
+            <div class="space-y-4">
+                <div class="glass-card rounded-xl p-6">
+                    <h3 class="font-semibold mb-2">هل يمكنني تغيير الخطة لاحقاً؟</h3>
+                    <p class="text-gray-400">نعم! يمكنك الترقية أو تخفيض الخطة في أي وقت. التغيير يتم فوراً.</p>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <h3 class="font-semibold mb-2">هل فيه فترة تجريبية مجانية؟</h3>
+                    <p class="text-gray-400">نعم! يمكنك إنشاء وكيلك الذكي مجاناً وتجربته. اشترك لما تكون مستعد للانطلاق.</p>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <h3 class="font-semibold mb-2">إزاي أدفع؟</h3>
+                    <p class="text-gray-400">نقبل الدفع عبر Instapay أو Vodafone Cash. بعد الدفع، هتوصلك رسالة تأكيد ووكيلك هيتفعل فوراً.</p>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6">
+                    <h3 class="font-semibold mb-2">هل فيه عقد أو التزام؟</h3>
+                    <p class="text-gray-400">لا! الاشتراك شهري ويمكنك إلغاؤه في أي وقت من غير أي التزامات.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CTA -->
+        <div class="mt-16 text-center">
+            <p class="text-gray-400 mb-6">جاهز لأتمتة شركتك؟</p>
+            <a href="/onboarding" class="btn-primary inline-block px-8 py-4 rounded-full font-semibold text-lg">
+                ابدأ مجاناً الآن 🚀
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let selectedPlan = null;
+    let selectedPrice = 0;
+    let selectedPaymentMethod = null;
+    
+    // Payment account details (replace with your actual details)
+    const paymentDetails = {
+        instapay: {
+            number: '01012345678',
+            name: 'Nucleus AI Technologies'
+        },
+        vodafone: {
+            number: '01012345678',
+            name: 'Nucleus AI'
+        }
+    };
+    
+    function selectPlan(plan, price) {
+        selectedPlan = plan;
+        selectedPrice = price;
+        
+        // Update modal
+        document.getElementById('selectedPlanName').textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
+        document.getElementById('selectedPlanPrice').textContent = price.toLocaleString();
+        
+        // Show modal
+        document.getElementById('paymentModal').classList.remove('hidden');
+        document.getElementById('paymentModal').classList.add('flex');
+        
+        // Reset payment selection
+        document.querySelectorAll('.payment-method').forEach(el => el.classList.remove('selected'));
+        document.getElementById('paymentDetails').classList.add('hidden');
+        selectedPaymentMethod = null;
+    }
+    
+    function selectPayment(method) {
+        selectedPaymentMethod = method;
+        
+        // Update UI
+        document.querySelectorAll('.payment-method').forEach(el => el.classList.remove('selected'));
+        event.currentTarget.classList.add('selected');
+        
+        // Show payment details
+        const details = paymentDetails[method];
+        document.getElementById('paymentNumber').textContent = details.number;
+        document.getElementById('paymentName').textContent = 'اسم الحساب: ' + details.name;
+        document.getElementById('paymentDetails').classList.remove('hidden');
+    }
+    
+    function closePaymentModal() {
+        document.getElementById('paymentModal').classList.add('hidden');
+        document.getElementById('paymentModal').classList.remove('flex');
+    }
+    
+    async function confirmPayment() {
+        if (!selectedPaymentMethod) {
+            alert(currentLang === 'ar' ? 'الرجاء اختيار طريقة الدفع' : 'Please select a payment method');
+            return;
+        }
+        
+        const businessId = localStorage.getItem('nucleus-business-id');
+        
+        // Simulate payment confirmation
+        alert(currentLang === 'ar' 
+            ? `تم إرسال طلب الاشتراك!\n\nسنتواصل معك خلال دقائق لتأكيد الدفع وتفعيل حسابك.\n\nطريقة الدفع: ${selectedPaymentMethod === 'instapay' ? 'Instapay' : 'Vodafone Cash'}\nالمبلغ: ${selectedPrice.toLocaleString()} ج.م` 
+            : `Subscription request sent!\n\nWe will contact you within minutes to confirm payment and activate your account.`);
+        
+        closePaymentModal();
+        
+        // In production, you would send this to your backend
+        // and wait for payment verification
+    }
+    
+    // Close modal on outside click
+    document.getElementById('paymentModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closePaymentModal();
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,588 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - {{ business.name }} | Nucleus AI{% endblock %}
+
+{% block nav_links %}
+<div class="flex items-center space-x-2">
+    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+    <span class="text-sm text-gray-400" data-i18n="dashboard_ai_active">AI Active</span>
+</div>
+<a href="/onboarding" class="px-4 py-2 rounded-lg text-sm border border-gray-700 hover:border-blue-500 transition-colors" data-i18n="dashboard_new_agent">
+    + New Agent
+</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: 500px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #3b82f6 #1f2937;
+    }
+    
+    .chat-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .chat-container::-webkit-scrollbar-track {
+        background: #1f2937;
+        border-radius: 3px;
+    }
+    
+    .chat-container::-webkit-scrollbar-thumb {
+        background: #3b82f6;
+        border-radius: 3px;
+    }
+    
+    .message-user {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border-radius: 20px 20px 5px 20px;
+    }
+    
+    .message-bot {
+        background: rgba(55, 65, 81, 0.8);
+        border-radius: 20px 20px 20px 5px;
+    }
+    
+    @keyframes typing {
+        0%, 60%, 100% { opacity: 0.3; }
+        30% { opacity: 1; }
+    }
+    
+    .typing-indicator span {
+        animation: typing 1.4s infinite;
+    }
+    
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    .form-input {
+        background: rgba(31, 41, 55, 0.8);
+        border: 1px solid rgba(75, 85, 99, 0.5);
+        transition: all 0.3s ease;
+    }
+    
+    .form-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        outline: none;
+    }
+    
+    .table-container {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    
+    .lead-row {
+        transition: all 0.2s ease;
+    }
+    
+    .lead-row:hover {
+        background: rgba(59, 130, 246, 0.1);
+    }
+    
+    .status-badge {
+        animation: pulse-glow 2s ease-in-out infinite;
+    }
+    
+    /* Paywall Overlay */
+    .paywall-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(4px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        border-radius: inherit;
+    }
+    
+    .paywall-overlay.hidden {
+        display: none;
+    }
+    
+    .locked-section {
+        position: relative;
+        filter: grayscale(50%);
+        pointer-events: none;
+    }
+    
+    .locked-section.allow-interaction {
+        pointer-events: auto;
+        filter: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pt-24 pb-12 min-h-screen">
+    <div class="max-w-7xl mx-auto px-6">
+        <!-- Success Message -->
+        {% if subscription_success %}
+        <div class="mb-6 p-4 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 text-center">
+            🎉 Subscription successful! Your AI Agent is now active.
+        </div>
+        {% endif %}
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">{{ business.name }}</h1>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <span class="px-3 py-1 rounded-full text-sm bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                            {{ business.industry }}
+                        </span>
+                        <span class="text-gray-500">•</span>
+                        <span class="text-gray-400 text-sm">Created {{ business.created_at.strftime('%b %d, %Y') if business.created_at else 'Recently' }}</span>
+                        {% if business.subscription_status != 'free' %}
+                        <span class="px-3 py-1 rounded-full text-sm bg-green-500/20 text-green-400 border border-green-500/30">
+                            {{ business.subscription_status.title() }} Plan
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="copyWidgetCode()" class="px-4 py-2 rounded-lg text-sm border border-gray-700 hover:border-blue-500 transition-colors flex items-center gap-2" id="widgetCodeBtn">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                        </svg>
+                        <span data-i18n="dashboard_get_widget">Get Widget Code</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="glass-card rounded-xl p-5">
+                <div class="text-3xl font-bold gradient-text">{{ leads|length }}</div>
+                <div class="text-gray-400 text-sm mt-1" data-i18n="dashboard_total_leads">Total Leads</div>
+            </div>
+            <div class="glass-card rounded-xl p-5">
+                <div class="text-3xl font-bold text-green-400">{{ leads|length }}</div>
+                <div class="text-gray-400 text-sm mt-1" data-i18n="dashboard_this_week">This Week</div>
+            </div>
+            <div class="glass-card rounded-xl p-5">
+                <div class="text-3xl font-bold text-cyan-400">24/7</div>
+                <div class="text-gray-400 text-sm mt-1" data-i18n="dashboard_availability">Availability</div>
+            </div>
+            <div class="glass-card rounded-xl p-5">
+                <div class="text-3xl font-bold text-blue-400">{{ business.industry }}</div>
+                <div class="text-gray-400 text-sm mt-1" data-i18n="dashboard_industry">Industry</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid lg:grid-cols-2 gap-6">
+            <!-- Section A: Bot Tester -->
+            <div class="glass-card rounded-2xl overflow-hidden relative" id="botTesterSection">
+                <!-- Paywall Overlay -->
+                {% if not business.can_access_bot() %}
+                <div class="paywall-overlay" id="botPaywall">
+                    <div class="text-center p-8">
+                        <div class="text-6xl mb-4">🔒</div>
+                        <h3 class="text-xl font-bold mb-2" data-i18n="paywall_title">Upgrade to Pro</h3>
+                        <p class="text-gray-400 mb-6 max-w-sm" data-i18n="paywall_desc">
+                            Subscribe to unlock your AI Agent and start capturing leads.
+                        </p>
+                        <a href="/pricing" class="btn-primary px-6 py-3 rounded-xl font-semibold inline-block" data-i18n="paywall_button">
+                            View Pricing Plans
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="p-5 border-b border-gray-800 {% if not business.can_access_bot() %}locked-section{% endif %}">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold flex items-center gap-2">
+                                <span class="w-2 h-2 bg-green-400 rounded-full status-badge"></span>
+                                <span data-i18n="dashboard_bot_tester">AI Bot Tester</span>
+                            </h2>
+                            <p class="text-gray-500 text-sm mt-1" data-i18n="dashboard_bot_tester_desc">Test your AI agent's responses</p>
+                        </div>
+                        <button onclick="clearChat()" class="text-gray-500 hover:text-white text-sm transition-colors" data-i18n="dashboard_clear_chat">
+                            Clear Chat
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Chat Interface -->
+                <div id="chatContainer" class="chat-container p-5 space-y-4 {% if not business.can_access_bot() %}locked-section{% endif %}">
+                    <!-- Welcome Message -->
+                    <div class="flex justify-start">
+                        <div class="message-bot max-w-[80%] p-4">
+                            <p class="text-sm">
+                                <span data-i18n="dashboard_welcome_message">👋 Hello! I'm the AI assistant for</span> 
+                                <strong>{{ business.name }}</strong>. 
+                                <span data-i18n="dashboard_welcome_message_end">How can I help you today?</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Input Area -->
+                <div class="p-4 border-t border-gray-800 {% if not business.can_access_bot() %}locked-section{% endif %}">
+                    <form id="chatForm" class="flex gap-3">
+                        <input 
+                            type="text" 
+                            id="userInput" 
+                            class="form-input flex-1 px-4 py-3 rounded-xl text-white"
+                            data-i18n-placeholder="dashboard_chat_placeholder"
+                            placeholder="Type your message..."
+                            autocomplete="off"
+                        >
+                        <button type="submit" class="btn-primary px-6 py-3 rounded-xl font-semibold flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                            </svg>
+                            <span data-i18n="dashboard_send">Send</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Section B: Leads CRM -->
+            <div class="glass-card rounded-2xl overflow-hidden">
+                <div class="p-5 border-b border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold flex items-center gap-2">
+                                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                </svg>
+                                <span data-i18n="dashboard_captured_leads">Captured Leads</span>
+                            </h2>
+                            <p class="text-gray-500 text-sm mt-1" data-i18n="dashboard_leads_desc">Leads collected by your AI agent</p>
+                        </div>
+                        <button onclick="refreshLeads()" class="text-gray-500 hover:text-white transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Leads Table -->
+                <div id="leadsContainer" class="table-container">
+                    {% if leads %}
+                    <table class="w-full">
+                        <thead class="bg-gray-800/50 sticky top-0">
+                            <tr>
+                                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Name</th>
+                                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Contact</th>
+                                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Intent</th>
+                                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
+                                <th class="px-5 py-3"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800">
+                            {% for lead in leads %}
+                            <tr class="lead-row">
+                                <td class="px-5 py-4">
+                                    <div class="font-medium text-white">{{ lead.customer_name or 'Unknown' }}</div>
+                                </td>
+                                <td class="px-5 py-4">
+                                    <div class="text-gray-300 text-sm">{{ lead.customer_contact or 'N/A' }}</div>
+                                </td>
+                                <td class="px-5 py-4">
+                                    <div class="text-gray-400 text-sm max-w-[150px] truncate" title="{{ lead.intent }}">
+                                        {{ (lead.intent or 'General inquiry')[:50] }}{% if lead.intent and lead.intent|length > 50 %}...{% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4">
+                                    <div class="text-gray-500 text-sm">{{ lead.created_at.strftime('%b %d') if lead.created_at else 'Today' }}</div>
+                                </td>
+                                <td class="px-5 py-4">
+                                    <button onclick="deleteLead({{ lead.id }})" class="text-red-400 hover:text-red-300 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="p-12 text-center">
+                        <div class="text-6xl mb-4">📭</div>
+                        <h3 class="text-lg font-semibold mb-2" data-i18n="dashboard_no_leads">No Leads Yet</h3>
+                        <p class="text-gray-500 max-w-sm mx-auto" data-i18n="dashboard_no_leads_desc">
+                            Start chatting with your AI bot to test lead capture. When users share their contact info, it will appear here.
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- System Prompt Preview -->
+        <div class="mt-8 glass-card rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                    <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <span data-i18n="dashboard_system_prompt">AI System Prompt</span>
+                </h3>
+                <button onclick="togglePrompt()" class="text-blue-400 hover:text-blue-300 text-sm transition-colors" data-i18n="dashboard_show_hide">
+                    Show/Hide
+                </button>
+            </div>
+            <div id="promptPreview" class="hidden">
+                <pre class="bg-gray-900/50 rounded-xl p-4 text-sm text-gray-300 overflow-x-auto whitespace-pre-wrap">{{ business.system_prompt }}</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed bottom-6 right-6 glass-card px-6 py-3 rounded-xl transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+    <span id="toastMessage"></span>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const businessId = {{ business.id }};
+    const canAccessBot = {{ 'true' if business.can_access_bot() else 'false' }};
+    let messages = [];
+    let isLoading = false;
+    
+    // Chat form submission
+    document.getElementById('chatForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!canAccessBot) {
+            showToast(currentLang === 'ar' ? 'يرجى الاشتراك للوصول إلى الوكيل الذكي' : 'Please subscribe to access the AI Bot');
+            return;
+        }
+        
+        if (isLoading) return;
+        
+        const input = document.getElementById('userInput');
+        const message = input.value.trim();
+        
+        if (!message) return;
+        
+        // Add user message to UI
+        addMessage(message, 'user');
+        input.value = '';
+        
+        // Add to messages array
+        messages.push({ role: 'user', content: message });
+        
+        // Show typing indicator
+        showTyping();
+        isLoading = true;
+        
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    business_id: businessId,
+                    messages: messages
+                })
+            });
+            
+            const data = await response.json();
+            
+            // Remove typing indicator
+            hideTyping();
+            
+            if (data.success) {
+                // Add bot response
+                addMessage(data.response, 'bot');
+                messages.push({ role: 'assistant', content: data.response });
+                
+                // Refresh leads if new lead was captured
+                refreshLeads();
+            } else if (data.requires_subscription) {
+                addMessage(currentLang === 'ar' ? 'يرجى الاشتراك لاستخدام الوكيل الذكي.' : 'Please subscribe to use the AI Bot.', 'bot');
+            } else {
+                addMessage(currentLang === 'ar' ? 'عذراً، حدث خطأ. يرجى المحاولة مرة أخرى.' : 'Sorry, I encountered an error. Please try again.', 'bot');
+            }
+        } catch (error) {
+            hideTyping();
+            addMessage(currentLang === 'ar' ? 'خطأ في الاتصال. يرجى التحقق من الشبكة.' : 'Connection error. Please check your network.', 'bot');
+        }
+        
+        isLoading = false;
+    });
+    
+    function addMessage(text, type) {
+        const container = document.getElementById('chatContainer');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${type === 'user' ? 'justify-end' : 'justify-start'}`;
+        
+        messageDiv.innerHTML = `
+            <div class="${type === 'user' ? 'message-user' : 'message-bot'} max-w-[80%] p-4">
+                <p class="text-sm">${escapeHtml(text)}</p>
+            </div>
+        `;
+        
+        container.appendChild(messageDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    function showTyping() {
+        const container = document.getElementById('chatContainer');
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'typingIndicator';
+        typingDiv.className = 'flex justify-start';
+        typingDiv.innerHTML = `
+            <div class="message-bot p-4">
+                <div class="typing-indicator flex gap-1">
+                    <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                    <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                    <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                </div>
+            </div>
+        `;
+        container.appendChild(typingDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    function hideTyping() {
+        const typing = document.getElementById('typingIndicator');
+        if (typing) typing.remove();
+    }
+    
+    function clearChat() {
+        const container = document.getElementById('chatContainer');
+        container.innerHTML = `
+            <div class="flex justify-start">
+                <div class="message-bot max-w-[80%] p-4">
+                    <p class="text-sm">
+                        <span data-i18n="dashboard_welcome_message">👋 Hello! I'm the AI assistant for</span> 
+                        <strong>{{ business.name }}</strong>. 
+                        <span data-i18n="dashboard_welcome_message_end">How can I help you today?</span>
+                    </p>
+                </div>
+            </div>
+        `;
+        messages = [];
+        showToast(currentLang === 'ar' ? 'تم مسح المحادثة' : 'Chat cleared');
+    }
+    
+    async function refreshLeads() {
+        try {
+            const response = await fetch(`/api/leads/${businessId}`);
+            const data = await response.json();
+            
+            const container = document.getElementById('leadsContainer');
+            
+            if (data.leads.length === 0) {
+                container.innerHTML = `
+                    <div class="p-12 text-center">
+                        <div class="text-6xl mb-4">📭</div>
+                        <h3 class="text-lg font-semibold mb-2" data-i18n="dashboard_no_leads">No Leads Yet</h3>
+                        <p class="text-gray-500 max-w-sm mx-auto" data-i18n="dashboard_no_leads_desc">
+                            Start chatting with your AI bot to test lead capture. When users share their contact info, it will appear here.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <table class="w-full">
+                    <thead class="bg-gray-800/50 sticky top-0">
+                        <tr>
+                            <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Name</th>
+                            <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Contact</th>
+                            <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Intent</th>
+                            <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
+                            <th class="px-5 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800">
+                        ${data.leads.map(lead => `
+                            <tr class="lead-row">
+                                <td class="px-5 py-4">
+                                    <div class="font-medium text-white">${lead.customer_name || 'Unknown'}</div>
+                                </td>
+                                <td class="px-5 py-4">
+                                    <div class="text-gray-300 text-sm">${lead.customer_contact || 'N/A'}</div>
+                                </td>
+                                <td class="px-5 py-4">
+                                    <div class="text-gray-400 text-sm max-w-[150px] truncate" title="${lead.intent || ''}">
+                                        ${(lead.intent || 'General inquiry').substring(0, 50)}${lead.intent && lead.intent.length > 50 ? '...' : ''}
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4">
+                                    <div class="text-gray-500 text-sm">${lead.created_at || 'Today'}</div>
+                                </td>
+                                <td class="px-5 py-4">
+                                    <button onclick="deleteLead(${lead.id})" class="text-red-400 hover:text-red-300 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        } catch (error) {
+            console.error('Failed to refresh leads:', error);
+        }
+    }
+    
+    async function deleteLead(leadId) {
+        if (!confirm(currentLang === 'ar' ? 'حذف هذا العميل؟' : 'Delete this lead?')) return;
+        
+        try {
+            await fetch(`/api/delete-lead/${leadId}`, { method: 'DELETE' });
+            refreshLeads();
+            showToast(currentLang === 'ar' ? 'تم حذف العميل' : 'Lead deleted');
+        } catch (error) {
+            showToast(currentLang === 'ar' ? 'فشل حذف العميل' : 'Failed to delete lead');
+        }
+    }
+    
+    function togglePrompt() {
+        const preview = document.getElementById('promptPreview');
+        preview.classList.toggle('hidden');
+    }
+    
+    function copyWidgetCode() {
+        const code = `<script src="https://nucleus-ai.com/widget.js" data-business-id="${businessId}"><\/script>`;
+        navigator.clipboard.writeText(code);
+        showToast(currentLang === 'ar' ? 'تم نسخ كود الودجة!' : 'Widget code copied to clipboard!');
+    }
+    
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        toastMessage.textContent = message;
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        
+        setTimeout(() => {
+            toast.classList.add('translate-y-20', 'opacity-0');
+        }, 3000);
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Auto-refresh leads every 30 seconds
+    setInterval(refreshLeads, 30000);
+</script>
+{% endblock %}
