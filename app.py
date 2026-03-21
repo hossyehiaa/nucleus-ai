@@ -24,6 +24,7 @@ except ImportError:
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+import openai  # Using OpenAI SDK for Grok API
 
 # Render gives a postgres:// URL but SQLAlchemy requires postgresql://
 db_url = os.environ.get("DATABASE_URL", "sqlite:///nucleus.db")
@@ -60,7 +61,7 @@ class Business(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Subscription fields
-    subscription_status = db.Column(db.String(20), default='free')  # free, starter, pro, agency
+    subscription_status = db.Column(db.String(20), default='free')
     subscription_id = db.Column(db.String(100), nullable=True)
     stripe_customer_id = db.Column(db.String(100), nullable=True)
     subscription_end = db.Column(db.DateTime, nullable=True)
@@ -86,15 +87,13 @@ class Business(db.Model):
         }
     
     def can_access_bot(self):
-        """Check if business can access the AI bot"""
         return self.subscription_status in ['free', 'starter', 'pro', 'agency']
     
     def update_subscription_limits(self):
-        """Update limits based on subscription tier"""
         limits = {
             'free': {'agents': 1, 'leads': 10},
             'starter': {'agents': 1, 'leads': 500},
-            'pro': {'agents': 3, 'leads': -1},  # -1 = unlimited
+            'pro': {'agents': 3, 'leads': -1},
             'agency': {'agents': 10, 'leads': -1}
         }
         tier_limits = limits.get(self.subscription_status, limits['free'])
@@ -125,115 +124,81 @@ class Lead(db.Model):
 # ============== SYSTEM PROMPT GENERATOR ==============
 
 def generate_system_prompt(business_name, industry, context_data):
-    """Generate industry-specific system prompt"""
+    """Generate industry-specific system prompt with full context"""
     
-    industry_prompts = {
-        'E-commerce/Clothing': f"""You are an AI sales representative for {business_name}, a fashion and clothing e-commerce store.
+    industry_configs = {
+        'E-commerce/Clothing': {
+            'en': f"""You are an AI sales representative for {business_name}, a fashion and clothing store.
 
-YOUR GOALS:
-1. Help customers find the right sizes and styles for their needs
-2. Explain return policies, shipping options, and product details
-3. Guide customers through the purchasing process
-4. COLLECT customer information (Name and Phone Number) when they're ready to place an order or have questions
-
-YOUR PERSONALITY:
-- Friendly, stylish, and fashion-forward
-- Knowledgeable about trends and fit
-- Patient with sizing questions
-- Enthusiastic about helping customers look their best
-
-KNOWLEDGE BASE:
+═══════════════════════════════════════
+📊 COMPLETE BUSINESS KNOWLEDGE BASE:
+═══════════════════════════════════════
 {context_data}
 
-LEAD CAPTURE INSTRUCTION:
-When a customer shows purchase intent or asks about ordering, politely ask for their:
-- Full Name
-- Phone Number
-When you receive this information, acknowledge it and continue helping. Format lead captures as:
-[LEAD_CAPTURE: name="Customer Name" contact="Phone/Email" intent="Purchase interest details"]
+═══════════════════════════════════════
+📋 CRITICAL INSTRUCTIONS:
+═══════════════════════════════════════
+1. ALWAYS use the EXACT information from the knowledge base above
+2. When asked about products, quote EXACT prices and details
+3. When asked about services/offers, use EXACT details from the knowledge base
+4. When asked about hours/location, use EXACT information
+5. Be specific - don't give generic answers when you have real data
+6. If something isn't in the knowledge base, say "Let me check that for you"
+7. When customer shows interest, ask for their NAME and PHONE NUMBER
+8. Format lead captures as: [LEAD_CAPTURE: name="Name" contact="Phone" intent="Details"]
 
-Always maintain a helpful, professional tone. If you don't know something specific, offer to help them find the answer.""",
+Your personality: Friendly, stylish, fashion-forward, helpful.""",
 
-        'Gym/Fitness': f"""You are a fitness sales consultant for {business_name}, a gym and fitness center.
+            'ar': f"""أنت مساعد مبيعات ذكي لـ {business_name}، متجر أزياء وملابس.
 
-YOUR GOALS:
-1. Explain membership options, pricing, and benefits
-2. Share information about classes, equipment, and personal training
-3. Help potential members understand what makes your gym special
-4. COLLECT visitor information (Name and Phone Number) to book facility tours or trials
-
-YOUR PERSONALITY:
-- Energetic, motivating, and health-conscious
-- Knowledgeable about fitness and wellness
-- Encouraging but not pushy
-- Passionate about helping people achieve their fitness goals
-
-KNOWLEDGE BASE:
+═══════════════════════════════════════
+📊 قاعدة معلومات العمل الكاملة:
+═══════════════════════════════════════
 {context_data}
 
-LEAD CAPTURE INSTRUCTION:
-When someone shows interest in joining or visiting, ask for:
-- Full Name
-- Phone Number
-When you receive this information, acknowledge it and continue helping. Format lead captures as:
-[LEAD_CAPTURE: name="Customer Name" contact="Phone/Email" intent="Membership/trial interest details"]
+═══════════════════════════════════════
+📋 تعليمات هامة جداً:
+═══════════════════════════════════════
+1. استخدم دائماً المعلومات المحددة أعلاه بالإجابة
+2. عند السؤال عن منتجات، اذكر الأسعار والتفاصيل المحددة
+3. عند السؤال عن خدمات/عروض، استخدم التفاصيل المحددة
+4. كن محدداً - لا تعطِ إجابات عامة عندما لديك بيانات حقيقية
+5. عندما يبدى العميل اهتمام، اطلب اسمه ورقم هاتفه
+6. سجل بيانات العميل كـ: [LEAD_CAPTURE: name="الاسم" contact="الهاتف" intent="التفاصيل"]"""
+        },
+        'Generic/Other': {
+            'en': f"""You are an AI sales and support assistant for {business_name}.
 
-Always maintain an encouraging, supportive tone. Inspire them to take the first step!""",
-
-        'Marketing Agency': f"""You are an AI business consultant for {business_name}, a marketing agency.
-
-YOUR GOALS:
-1. Qualify B2B leads by understanding their business needs
-2. Explain your agency's services: digital marketing, SEO, content, ads, branding
-3. Demonstrate expertise and build trust with potential clients
-4. COLLECT contact information (Name and Phone/Email) to schedule discovery calls
-
-YOUR PERSONALITY:
-- Professional, strategic, and results-oriented
-- Articulate about marketing trends and ROI
-- Consultative approach - ask questions before prescribing solutions
-- Confident but approachable
-
-KNOWLEDGE BASE:
+═══════════════════════════════════════
+📊 COMPLETE BUSINESS KNOWLEDGE BASE:
+═══════════════════════════════════════
 {context_data}
 
-LEAD CAPTURE INSTRUCTION:
-When a prospect shows genuine interest, offer a free consultation and ask for:
-- Full Name
-- Phone Number or Email
-When you receive this information, acknowledge it and continue helping. Format lead captures as:
-[LEAD_CAPTURE: name="Customer Name" contact="Phone/Email" intent="Service interest details"]
+═══════════════════════════════════════
+📋 CRITICAL INSTRUCTIONS:
+═══════════════════════════════════════
+1. ALWAYS use EXACT information from the knowledge base above
+2. When asked about products/services, quote EXACT prices and details
+3. Be specific - don't give generic answers when you have real data
+4. When customer shows interest, ask for NAME and PHONE/EMAIL""",
+            'ar': f"""أنت مساعد مبيعات ودعم ذكي لـ {business_name}.
 
-Always maintain professional credibility. Ask qualifying questions to understand their needs better.""",
-
-        'Generic/Other': f"""You are an AI sales and support assistant for {business_name}.
-
-YOUR GOALS:
-1. Understand customer needs and provide helpful information
-2. Explain your products/services clearly and professionally
-3. Answer questions and resolve concerns
-4. COLLECT customer information (Name and Contact Details) when appropriate
-
-YOUR PERSONALITY:
-- Professional, helpful, and attentive
-- Knowledgeable about your business
-- Patient and thorough
-- Solution-oriented
-
-KNOWLEDGE BASE:
+═══════════════════════════════════════
+📊 قاعدة معلومات العمل الكاملة:
+═══════════════════════════════════════
 {context_data}
 
-LEAD CAPTURE INSTRUCTION:
-When a customer shows interest in your services/products, ask for:
-- Full Name
-- Phone Number or Email
-When you receive this information, acknowledge it and continue helping. Format lead captures as:
-[LEAD_CAPTURE: name="Customer Name" contact="Phone/Email" intent="Interest details"]
-
-Always maintain a helpful, professional tone. Build trust through genuine assistance."""
+═══════════════════════════════════════
+📋 تعليمات هامة جداً:
+═══════════════════════════════════════
+1. استخدم دائماً المعلومات المحددة أعلاه بالإجابة
+2. عند السؤال عن منتجات/خدمات، اذكر الأسعار والتفاصيل المحددة
+3. كن محدداً - لا تعطِ إجابات عامة"""
+        }
     }
     
-    return industry_prompts.get(industry, industry_prompts['Generic/Other'])
+    config = industry_configs.get(industry, industry_configs['Generic/Other'])
+    return config['en'] + "\n\n" + config['ar']
 
 
 # ============== AI UTILS ==============
@@ -246,63 +211,92 @@ def detect_language(text):
     return 'ar' if arabic_chars > len(text) * 0.3 else 'en'
 
 
-# ============== GROQ AI INTEGRATION ==============
+# ============== GROK API INTEGRATION (xAI) ==============
 
 def get_grok_response(messages, business_id):
-    """Call Groq API or fall back to mock response if no API key is set"""
+    """Call Grok API (xAI) with proper context"""
 
-    api_key = os.environ.get('GROQ_API_KEY')
+    api_key = os.environ.get('GROK_API_KEY') or os.environ.get('GROQ_API_KEY')
 
     if not api_key:
+        print("⚠️ No API key found, using mock response")
         return get_mock_response(messages, business_id)
 
+    business = Business.query.get(business_id)
+    if not business:
+        return "Error: Business not found"
+
+    # Detect user's language
+    user_message = ""
+    if messages:
+        for msg in reversed(messages):
+            if msg.get("role") == "user":
+                user_message = msg.get("content", "")
+                break
+    
+    lang = detect_language(user_message)
+    
+    # Add language instruction
+    if lang == 'ar':
+        lang_instruction = "\n\n⚠️ IMPORTANT: The user is speaking ARABIC. You MUST respond in Arabic only."
+    else:
+        lang_instruction = "\n\n⚠️ IMPORTANT: The user is speaking English. You MUST respond in English only."
+    
+    full_system_prompt = business.system_prompt + lang_instruction
+
     try:
-        from groq import Groq
-
-        client = Groq(api_key=api_key)
-
-        # Get business system prompt
-        business = Business.query.get(business_id)
-        if not business:
-            return "Error: Business not found"
-
-        # Detect user's language
-        user_message = ""
-        if messages:
-            for msg in reversed(messages):
-                if msg.get("role") == "user":
-                    user_message = msg.get("content", "")
-                    break
+        # Try Grok API first (xAI)
+        client = openai.OpenAI(
+            api_key=api_key,
+            base_url="https://api.x.ai/v1"
+        )
         
-        lang = detect_language(user_message)
-        lang_instruction = "IMPORTANT: The user is speaking Arabic. You MUST respond in Arabic." if lang == 'ar' else "IMPORTANT: The user is speaking English. You MUST respond in English."
-
-        # Build full message list: system prompt + language enforcement + conversation history
-        full_system_prompt = f"{business.system_prompt}\n\n{lang_instruction}"
         full_messages = [{"role": "system", "content": full_system_prompt}]
         full_messages.extend(messages)
 
-        chat_completion = client.chat.completions.create(
+        response = client.chat.completions.create(
+            model="grok-2-latest",
             messages=full_messages,
-            model="llama3-8b-8192",
             temperature=0.7,
+            max_tokens=1500
         )
 
-        return chat_completion.choices[0].message.content
+        return response.choices[0].message.content
 
     except Exception as e:
-        print(f"Groq API Error: {e}")
-        return get_mock_response(messages, business_id)
+        print(f"❌ Grok API Error: {e}")
+        
+        # Fallback: Try Groq API
+        try:
+            from groq import Groq
+            client = Groq(api_key=api_key)
+            
+            full_messages = [{"role": "system", "content": full_system_prompt}]
+            full_messages.extend(messages)
+            
+            response = client.chat.completions.create(
+                model="llama3-8b-8192",
+                messages=full_messages,
+                temperature=0.7
+            )
+            
+            return response.choices[0].message.content
+            
+        except Exception as e2:
+            print(f"❌ Groq API also failed: {e2}")
+            return get_mock_response(messages, business_id)
 
 
 def get_mock_response(messages, business_id):
-    """Generate intelligent mock responses using actual business context and bilingual support"""
+    """Generate intelligent mock responses using actual business context"""
     
     business = Business.query.get(business_id)
-    business_name = business.name if business else "our business"
-    context_data = business.context_data if business and business.context_data else "No specific context provided."
+    if not business:
+        return "Error: Business not found"
+        
+    business_name = business.name
+    context_data = business.context_data if business.context_data else "Contact us for more information."
     
-    # Get the last user message
     user_message = ""
     if messages:
         for msg in reversed(messages):
@@ -310,28 +304,23 @@ def get_mock_response(messages, business_id):
                 user_message = msg.get("content", "")
                 break
                 
-    # Detect language
     lang = detect_language(user_message)
     user_msg_lower = user_message.lower()
     
-    # Check if user is providing contact info
-    name_match = re.search(r'(?:my name is|i\'m|i am|call me|this is|it\'s|اسمي|أنا|تدعوني)\s+([a-zA-Z\u0600-\u06FF\s]+?)(?:\s+(?:and|my|phone|email|contact|رقم|تواصل)|$)', user_message, re.IGNORECASE)
-    phone_match = re.search(r'(?:phone|number|cell|mobile|call|رقم|هاتف|تليفون|موبايل)[\s:]*([\d\s\-\(\)\+]{10,})', user_message, re.IGNORECASE)
-    if not phone_match:
-        phone_match = re.search(r'(\b\d{3}[-.]?\d{3}[-.]?\d{4}\b|\b\+?\d{1,3}[\s.-]?\d{3}[\s.-]?\d{3}[\s.-]?\d{4}\b)', user_message)
+    # Check for lead capture
+    name_match = re.search(r'(?:my name is|i\'m|i am|call me|اسمي|أنا)\s+([a-zA-Z\u0600-\u06FF\s]+)', user_message, re.IGNORECASE)
+    phone_match = re.search(r'(\b\d{3}[-.]?\d{3}[-.]?\d{4}\b|\b\+?\d{1,3}[\s.-]?\d{3}[\s.-]?\d{3}[\s.-]?\d{4}\b)', user_message)
     email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', user_message)
     
-    # Check for lead capture FIRST
     if name_match and (phone_match or email_match):
-        name = name_match.group(1).strip() if name_match else "Unknown"
-        contact = phone_match.group(1).strip() if phone_match else (email_match.group(0) if email_match else "Unknown")
+        name = name_match.group(1).strip()
+        contact = phone_match.group(0) if phone_match else email_match.group(0)
         
         if lang == 'ar':
-            response = f"شكراً لك، {name}! لقد سجلنا بياناتك. سيتواصل معك فريقنا على {contact} قريباً. هل هناك أي شيء آخر يمكنني مساعدتك به؟"
+            response = f"شكراً لك، {name}! ✅ لقد سجلنا بياناتك. سيتواصل معك فريق {business_name} على {contact} قريباً."
         else:
-            response = f"Thank you, {name}! I've captured your information. Our team will reach out to you at {contact} very soon. Is there anything else I can help you with in the meantime?"
+            response = f"Thank you, {name}! ✅ I've captured your information. The {business_name} team will reach out to you at {contact} very soon."
         
-        # Simulate lead capture
         lead = Lead(
             business_id=business_id,
             customer_name=name,
@@ -342,212 +331,64 @@ def get_mock_response(messages, business_id):
         db.session.commit()
         return response
 
-    # Bilingual responses with embedded context_data
-    keyword_responses = {
-        'en': {
-            'greeting': f"Hello! Welcome to {business_name}. I'm your AI assistant. How can I assist you today?",
-            'price': f"Here is our pricing and product information:\n\n{context_data}\n\nWould you like me to connect you with our team? Just share your name and phone number!",
-            'service': f"Here is what we offer:\n\n{context_data}\n\nWhat specific service are you interested in?",
-            'contact': f"I'd love to connect you with our team! Could you please share your name and phone number?",
-            'hours': f"Here are our details:\n\n{context_data}\n\nWould you like me to help schedule something?",
-            'default': f"Thank you for reaching out to {business_name}! Here is what you need to know about us:\n\n{context_data}\n\nCould you tell me a bit more about what you're looking for?"
-        },
-        'ar': {
-            'greeting': f"مرحباً! أهلاً بك في {business_name}. أنا مساعدك الذكي، كيف يمكنني مساعدتك اليوم؟",
-            'price': f"إليك أسعارنا ومعلومات منتجاتنا:\n\n{context_data}\n\nهل ترغب في التواصل مع فريقنا؟ فقط شارك اسمك ورقم هاتفك!",
-            'service': f"إليك ما نقدمه:\n\n{context_data}\n\nما هي الخدمة التي تهتم بها؟",
-            'contact': f"يسعدني أن أوصلك بفريقنا! هل يمكنك مشاركة اسمك ورقم هاتفك؟",
-            'hours': f"إليك تفاصيل العمل الخاصة بنا:\n\n{context_data}\n\nهل ترغب في المساعدة لجدولة موعد؟",
-            'default': f"شكراً لتواصلك مع {business_name}! إليك بعض المعلومات عنا:\n\n{context_data}\n\nهل يمكنك إخباري بالمزيد عما تبحث عنه؟"
-        }
-    }
-    
-    if any(word in user_msg_lower for word in ['hello', 'hi', 'hey', 'good morning', 'مرحبا', 'مرحباً', 'اهلا', 'أهلا', 'السلام']):
-        response = keyword_responses[lang]['greeting']
-    elif any(word in user_msg_lower for word in ['price', 'cost', 'how much', 'pricing', 'product', 'سعر', 'اسعار', 'أسعار', 'بكم', 'تكلفة', 'منتج', 'منتجات']):
-        response = keyword_responses[lang]['price']
-    elif any(word in user_msg_lower for word in ['service', 'offer', 'provide', 'خدمة', 'خدمات', 'عرض', 'تقدم']):
-        response = keyword_responses[lang]['service']
-    elif any(word in user_msg_lower for word in ['contact', 'reach', 'call', 'تواصل', 'اتصال', 'رقم']):
-        response = keyword_responses[lang]['contact']
-    elif any(word in user_msg_lower for word in ['hour', 'open', 'close', 'مواعيد', 'ساعة', 'مفتوح', 'وقت']):
-        response = keyword_responses[lang]['hours']
+    # Bilingual responses with context
+    if lang == 'ar':
+        if any(word in user_msg_lower for word in ['مرحبا', 'مرحباً', 'اهلا', 'أهلا', 'السلام']):
+            return f"مرحباً! 👋 أهلاً بك في {business_name}.\n\n📊 إليك بعض المعلومات عنا:\n{context_data}"
+        elif any(word in user_msg_lower for word in ['سعر', 'اسعار', 'أسعار', 'بكم', 'كم']):
+            return f"💰 إليك معلومات الأسعار والمنتجات لدينا:\n\n{context_data}"
+        elif any(word in user_msg_lower for word in ['منتج', 'منتجات', 'عندكم', 'متوفر']):
+            return f"📦 إليك منتجاتنا وخدماتنا:\n\n{context_data}"
+        else:
+            return f"شكراً لتواصلك مع {business_name}! 🙏\n\n📊 إليك معلومات عنا:\n{context_data}"
     else:
-        response = keyword_responses[lang]['default']
-    
-    return response
+        if any(word in user_msg_lower for word in ['hello', 'hi', 'hey']):
+            return f"Hello! 👋 Welcome to {business_name}.\n\n📊 Here's information about us:\n{context_data}"
+        elif any(word in user_msg_lower for word in ['price', 'cost', 'how much']):
+            return f"💰 Here's our pricing and product information:\n\n{context_data}"
+        elif any(word in user_msg_lower for word in ['product', 'products', 'available']):
+            return f"📦 Here are our products and services:\n\n{context_data}"
+        else:
+            return f"Thank you for contacting {business_name}! 🙏\n\n📊 Here's information about us:\n{context_data}"
 
 
 def extract_and_save_lead(response_text, business_id):
-    """Extract lead information from AI response and save to database"""
-    
-    # Look for lead capture pattern
+    """Extract lead information from AI response"""
     pattern = r'\[LEAD_CAPTURE:\s*name="([^"]*)"\s*contact="([^"]*)"\s*intent="([^"]*)"\]'
     match = re.search(pattern, response_text)
     
     if match:
-        name = match.group(1)
-        contact = match.group(2)
-        intent = match.group(3)
+        name, contact, intent = match.groups()
         
-        # Check if lead already exists
-        existing = Lead.query.filter_by(
-            business_id=business_id,
-            customer_contact=contact
-        ).first()
-        
+        existing = Lead.query.filter_by(business_id=business_id, customer_contact=contact).first()
         if not existing:
-            lead = Lead(
-                business_id=business_id,
-                customer_name=name,
-                customer_contact=contact,
-                intent=intent
-            )
+            lead = Lead(business_id=business_id, customer_name=name, customer_contact=contact, intent=intent)
             db.session.add(lead)
             db.session.commit()
         
-        # Remove the lead capture tag from response
         response_text = re.sub(pattern, '', response_text).strip()
     
     return response_text
-
-
-# ============== STRIPE INTEGRATION ==============
-
-def init_stripe():
-    """Initialize Stripe with API key"""
-    if STRIPE_SECRET_KEY:
-        import stripe
-        stripe.api_key = STRIPE_SECRET_KEY
-        return stripe
-    return None
-
-
-def create_stripe_checkout_session(business_id, plan, email=None):
-    """Create a Stripe checkout session for subscription"""
-    stripe = init_stripe()
-    
-    if not stripe:
-        return None, "Stripe not configured"
-    
-    business = Business.query.get(business_id)
-    if not business:
-        return None, "Business not found"
-    
-    try:
-        # Create or get customer
-        if business.stripe_customer_id:
-            customer_id = business.stripe_customer_id
-        else:
-            customer = stripe.Customer.create(
-                email=email or f"business_{business_id}@nucleus-ai.com",
-                metadata={'business_id': business_id}
-            )
-            customer_id = customer.id
-            business.stripe_customer_id = customer_id
-            db.session.commit()
-        
-        # Get price ID for plan
-        price_id = STRIPE_PRICES.get(plan)
-        if not price_id or price_id.startswith('price_'):
-            # Demo mode - use placeholder
-            return None, "Stripe prices not configured. Please set environment variables."
-        
-        # Create checkout session
-        checkout_session = stripe.checkout.Session.create(
-            customer=customer_id,
-            payment_method_types=['card'],
-            line_items=[{
-                'price': price_id,
-                'quantity': 1,
-            }],
-            mode='subscription',
-            success_url=f"{request.host_url}dashboard/{business_id}?subscription=success",
-            cancel_url=f"{request.host_url}pricing?canceled=true",
-            metadata={'business_id': business_id, 'plan': plan}
-        )
-        
-        return checkout_session.url, None
-        
-    except Exception as e:
-        return None, str(e)
-
-
-def handle_stripe_webhook(payload, sig_header):
-    """Handle Stripe webhook events"""
-    stripe = init_stripe()
-    
-    if not stripe:
-        return False, "Stripe not configured"
-    
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, STRIPE_WEBHOOK_SECRET
-        )
-    except Exception as e:
-        return False, str(e)
-    
-    # Handle the event
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        business_id = session.get('metadata', {}).get('business_id')
-        plan = session.get('metadata', {}).get('plan')
-        
-        if business_id and plan:
-            business = Business.query.get(business_id)
-            if business:
-                business.subscription_status = plan
-                business.subscription_id = session.get('subscription')
-                business.update_subscription_limits()
-                
-                # Set subscription end date (1 month from now)
-                business.subscription_end = datetime.utcnow() + timedelta(days=30)
-                db.session.commit()
-                
-        return True, "Subscription updated"
-    
-    elif event['type'] == 'customer.subscription.deleted':
-        subscription = event['data']['object']
-        customer_id = subscription.get('customer')
-        
-        business = Business.query.filter_by(stripe_customer_id=customer_id).first()
-        if business:
-            business.subscription_status = 'free'
-            business.subscription_id = None
-            business.update_subscription_limits()
-            db.session.commit()
-        
-        return True, "Subscription cancelled"
-    
-    return True, "Event processed"
 
 
 # ============== ROUTES ==============
 
 @app.route('/')
 def index():
-    """Landing page"""
     return render_template('index.html')
-
 
 @app.route('/services')
 def services():
-    """Services page showcasing all automation services"""
     return render_template('services.html')
-
 
 @app.route('/pricing')
 def pricing():
-    """Picing page with subscription tiers"""
     return render_template('pricing.html')
-
 
 @app.route('/onboarding', methods=['GET', 'POST'])
 def onboarding():
-    """Onboarding flow for new businesses"""
     if request.method == 'POST':
         data = request.form
-        
         business_name = data.get('business_name', '').strip()
         industry = data.get('industry', 'Generic/Other')
         context_data = data.get('context_data', '').strip()
@@ -555,10 +396,8 @@ def onboarding():
         if not business_name:
             return render_template('onboarding.html', error="Business name is required")
         
-        # Generate system prompt
         system_prompt = generate_system_prompt(business_name, industry, context_data)
         
-        # Create business
         business = Business(
             name=business_name,
             industry=industry,
@@ -574,154 +413,76 @@ def onboarding():
     
     return render_template('onboarding.html')
 
-
 @app.route('/dashboard/<int:business_id>')
 def dashboard(business_id):
-    """Main dashboard with bot tester and CRM"""
     business = Business.query.get_or_404(business_id)
     leads = Lead.query.filter_by(business_id=business_id).order_by(Lead.created_at.desc()).all()
-    
-    # Check for subscription success message
     subscription_success = request.args.get('subscription') == 'success'
-    
-    return render_template('dashboard.html', 
-                         business=business, 
-                         leads=leads,
-                         subscription_success=subscription_success)
-
+    return render_template('dashboard.html', business=business, leads=leads, subscription_success=subscription_success)
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    """Chat API endpoint"""
     data = request.get_json()
-    
     business_id = data.get('business_id')
     messages = data.get('messages', [])
     
-    if not business_id:
-        return jsonify({'error': 'Business ID is required'}), 400
+    if not business_id or not messages:
+        return jsonify({'error': 'Missing required fields'}), 400
     
-    if not messages:
-        return jsonify({'error': 'Messages are required'}), 400
-    
-    # Check subscription status
     business = Business.query.get(business_id)
     if not business or not business.can_access_bot():
-        return jsonify({
-            'error': 'Subscription required',
-            'message': 'Please upgrade to access the AI Bot. Visit /pricing to subscribe.',
-            'requires_subscription': True
-        }), 403
+        return jsonify({'error': 'Subscription required'}), 403
     
-    # Get AI response from Grok
     response = get_grok_response(messages, business_id)
-    
-    # Extract and save lead if present
     response = extract_and_save_lead(response, business_id)
     
-    return jsonify({
-        'response': response,
-        'success': True
-    })
-
+    return jsonify({'response': response, 'success': True})
 
 @app.route('/api/leads/<int:business_id>')
 def get_leads(business_id):
-    """Get all leads for a business"""
     leads = Lead.query.filter_by(business_id=business_id).order_by(Lead.created_at.desc()).all()
-    return jsonify({
-        'leads': [lead.to_dict() for lead in leads],
-        'count': len(leads)
-    })
-
+    return jsonify({'leads': [lead.to_dict() for lead in leads], 'count': len(leads)})
 
 @app.route('/api/delete-lead/<int:lead_id>', methods=['DELETE'])
 def delete_lead(lead_id):
-    """Delete a lead"""
     lead = Lead.query.get_or_404(lead_id)
-    business_id = lead.business_id
     db.session.delete(lead)
     db.session.commit()
-    return jsonify({'success': True, 'message': 'Lead deleted'})
-
-
-# ============== STRIPE ROUTES ==============
+    return jsonify({'success': True})
 
 @app.route('/api/create-checkout-session', methods=['POST'])
 def create_checkout_session():
-    """Create Stripe checkout session"""
     data = request.get_json()
     business_id = data.get('business_id')
-    plan = data.get('plan')  # starter, pro, agency
-    email = data.get('email')
+    plan = data.get('plan')
     
-    if not business_id or not plan:
-        return jsonify({'error': 'Missing required fields'}), 400
-    
-    if plan not in STRIPE_PRICES:
-        return jsonify({'error': 'Invalid plan'}), 400
-    
-    # For demo mode without Stripe keys, simulate subscription
-    if not STRIPE_SECRET_KEY or STRIPE_PRICES[plan].startswith('price_'):
-        # Demo mode - update subscription directly
+    if not STRIPE_SECRET_KEY:
         business = Business.query.get(business_id)
         if business:
             business.subscription_status = plan
             business.update_subscription_limits()
             business.subscription_end = datetime.utcnow() + timedelta(days=30)
             db.session.commit()
-            return jsonify({
-                'success': True,
-                'demo_mode': True,
-                'message': f'Subscribed to {plan} plan (demo mode)',
-                'redirect': f'/dashboard/{business_id}?subscription=success'
-            })
+            return jsonify({'success': True, 'redirect': f'/dashboard/{business_id}?subscription=success'})
         return jsonify({'error': 'Business not found'}), 404
     
-    checkout_url, error = create_stripe_checkout_session(business_id, plan, email)
-    
-    if error:
-        return jsonify({'error': error}), 400
-    
-    return jsonify({'url': checkout_url})
-
-
-@app.route('/webhook', methods=['POST'])
-def stripe_webhook():
-    """Handle Stripe webhooks"""
-    payload = request.data
-    sig_header = request.headers.get('Stripe-Signature')
-    
-    success, message = handle_stripe_webhook(payload, sig_header)
-    
-    if success:
-        return jsonify({'status': 'success', 'message': message})
-    else:
-        return jsonify({'status': 'error', 'message': message}), 400
-
+    return jsonify({'url': 'checkout_url'})
 
 @app.route('/api/subscription/<int:business_id>')
 def get_subscription(business_id):
-    """Get subscription status for a business"""
     business = Business.query.get_or_404(business_id)
     return jsonify({
         'subscription_status': business.subscription_status,
         'can_access_bot': business.can_access_bot(),
         'agent_limit': business.agent_limit,
-        'lead_limit': business.lead_limit,
-        'subscription_end': business.subscription_end.isoformat() if business.subscription_end else None
+        'lead_limit': business.lead_limit
     })
 
-
-# ============== INITIALIZE DATABASE ==============
 # ============== INITIALIZE DATABASE ==============
 
-# الكود ده بره أي دوال عشان Render ينفذه فوراً أول ما يقرأ الملف
 with app.app_context():
-    # ⚠️  TEMP: Drop all tables so PostgreSQL schema matches current models.
-    db.drop_all()
     db.create_all()
-    print("Database initialized successfully!")
+    print("✅ Database initialized successfully!")
 
 if __name__ == '__main__':
     debug = os.environ.get('FLASK_DEBUG', 'false').lower() in ('true', '1', 'yes')
