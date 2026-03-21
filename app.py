@@ -8,7 +8,6 @@ Features:
 - Multi-language Support (EN/AR)
 - Custom Branding
 """
-
 import os
 import json
 import re
@@ -21,13 +20,19 @@ try:
     load_dotenv()
 except ImportError:
     pass
+
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# Render gives a postgres:// URL but SQLAlchemy requires postgresql://
+db_url = os.environ.get("DATABASE_URL", "sqlite:///nucleus.db")
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///nucleus.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
 
@@ -231,47 +236,40 @@ Always maintain a helpful, professional tone. Build trust through genuine assist
     return industry_prompts.get(industry, industry_prompts['Generic/Other'])
 
 
-# ============== GROK API INTEGRATION (xAI) ==============
+# ============== GROQ AI INTEGRATION ==============
 
 def get_grok_response(messages, business_id):
-    """Call Grok API (xAI) or return mock response if no API key"""
-    
-    api_key = os.environ.get('GROK_API_KEY')
-    
+    """Call Groq API or fall back to mock response if no API key is set"""
+
+    api_key = os.environ.get('GROQ_API_KEY')
+
     if not api_key:
-        # Return intelligent mock response for demo
         return get_mock_response(messages, business_id)
-    
+
     try:
-        from openai import OpenAI
-        
-        # Configure OpenAI client for Grok API (xAI)
-        client = OpenAI(
-            api_key=api_key,
-            base_url="https://api.x.ai/v1"
-        )
-        
+        from groq import Groq
+
+        client = Groq(api_key=api_key)
+
         # Get business system prompt
         business = Business.query.get(business_id)
         if not business:
             return "Error: Business not found"
-        
-        # Prepare messages with system prompt
+
+        # Build full message list: system prompt + conversation history
         full_messages = [{"role": "system", "content": business.system_prompt}]
         full_messages.extend(messages)
-        
-        # Call Grok API
-        response = client.chat.completions.create(
-            model="grok-2-latest",  # or "grok-beta"
+
+        chat_completion = client.chat.completions.create(
             messages=full_messages,
-            max_tokens=500,
-            temperature=0.7
+            model="llama3-8b-8192",
+            temperature=0.7,
         )
-        
-        return response.choices[0].message.content
-        
+
+        return chat_completion.choices[0].message.content
+
     except Exception as e:
-        print(f"Grok API Error: {e}")
+        print(f"Groq API Error: {e}")
         return get_mock_response(messages, business_id)
 
 
