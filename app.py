@@ -15,6 +15,7 @@ except ImportError:
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 import openai
 
 db_url = os.environ.get("DATABASE_URL", "sqlite:///nucleus.db")
@@ -252,6 +253,11 @@ def checkout():
 
 with app.app_context():
     db.create_all()
+    try:
+        db.session.execute(text('ALTER TABLE business ADD COLUMN api_key VARCHAR(64) UNIQUE;'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)))
