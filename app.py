@@ -196,6 +196,9 @@ def onboarding():
 @app.route('/dashboard/<int:business_id>')
 def dashboard(business_id):
     b = Business.query.get_or_404(business_id)
+    if not b.api_key:
+        b.api_key = secrets.token_hex(32)
+        db.session.commit()
     leads = Lead.query.filter_by(business_id=business_id).order_by(Lead.created_at.desc()).all()
     return render_template('dashboard.html', business=b, leads=leads)
 

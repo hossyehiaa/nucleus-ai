@@ -149,6 +149,10 @@
                         </span>
                         {% endif %}
                     </div>
+                    <div class="mt-4 p-3 bg-gray-900/60 rounded-lg border border-gray-700/50 inline-block">
+                        <span class="text-gray-400 text-sm font-semibold mr-2">🔑 YOUR API KEY:</span>
+                        <span class="font-mono text-white tracking-wider select-all">{{ business.api_key }}</span>
+                    </div>
                 </div>
                 <div class="flex gap-3">
                     <button onclick="copyWidgetCode()" class="px-4 py-2 rounded-lg text-sm border border-gray-700 hover:border-blue-500 transition-colors flex items-center gap-2" id="widgetCodeBtn">
