@@ -92,7 +92,7 @@ def get_ai_response(messages, business_id):
         return "خطأ - حاول مرة أخرى"
     
     if not api_key:
-        return fallback_response(messages, business)
+        return "SYSTEM ERROR: GROQ_API_KEY is missing from environment variables."
     
     conversation = [{"role": "system", "content": business.system_prompt}]
     conversation.extend(messages[-8:])
@@ -123,7 +123,7 @@ def get_ai_response(messages, business_id):
         return reply
     except Exception as e:
         print(f"Groq error: {e}")
-        return fallback_response(messages, business)
+        return f"GROQ CONNECTION ERROR: {str(e)}"
 
 
 def fallback_response(messages, business):
