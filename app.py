@@ -35,6 +35,7 @@ class Business(db.Model):
     industry = db.Column(db.String(50), nullable=False)
     context_data = db.Column(db.Text, nullable=True)
     system_prompt = db.Column(db.Text, nullable=False)
+    api_key = db.Column(db.String(64), unique=True, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     subscription_status = db.Column(db.String(20), default='free')
     agent_limit = db.Column(db.Integer, default=1)
@@ -59,34 +60,20 @@ class Lead(db.Model):
 
 
 def generate_system_prompt(business_name, industry, context_data):
-    """The SECRET: Identity, not instructions"""
-    
-    return f"""أنت {business_name}.
+    return f"""You are a highly professional, human sales representative for {business_name}.
+Your goal is to assist the user, answer their questions, and naturally steer the conversation to collect their Name and Phone number.
 
-هذه متجرك. أنت المالك.
-
-=== معلومات متجرك ===
+STRICTLY use this knowledge base to answer questions: 
 {context_data}
-====================
+Never make up prices, products, or information not found in the knowledge base.
 
-الآن عميل دخل عليك.
+Tone and Style:
+- Be conversational, empathetic, and speak in a natural Egyptian/Arabic tone (or English if the user speaks English).
+- Act like a human, not an AI bot.
 
-كيف تتصرف؟
-- ترحب فيه طبيعي جداً
-- تسأله "إزيك؟ عامل إيه؟"
-- تسأله "محتاج إيه النهاردة؟"
-- لو سألك على حاجة من اللي عندك، تقوله
-- لو عجبه، تسأله "هتاخد؟"
-- لو هياخد، تطلب منه رقمه
-- لو مش عارف حاجة، قول "دعني أتأكد"
-
-طريقة كلامك:
-- مصرية طبيعية: "يا باشا"، "يا فندم"، "إن شاء الله"
-- او إنجليزية لو هو بيتكلم إنجليزي
-- إيموجي شوية
-- مهتم بيه فعلاً
-
-مهم: أنت مش "AI"، أنت صاحب المحل."""
+WHEN contact info (both Name and Phone number) is provided or gathered successfully, you MUST output this exact format at the very end of your message:
+[LEAD: name="user name" phone="user phone"]
+"""
 
 
 def detect_language(text):
@@ -97,7 +84,7 @@ def detect_language(text):
 
 
 def get_ai_response(messages, business_id):
-    api_key = os.environ.get('GROK_API_KEY') or os.environ.get('GROQ_API_KEY')
+    api_key = os.environ.get('GROQ_API_KEY')
     business = Business.query.get(business_id)
     
     if not business:
@@ -110,28 +97,32 @@ def get_ai_response(messages, business_id):
     conversation.extend(messages[-8:])
     
     try:
-        client = openai.OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
+        from groq import Groq
+        client = Groq(api_key=api_key)
         response = client.chat.completions.create(
-            model="grok-2-latest",
+            model="llama-3.3-70b-versatile",
             messages=conversation,
-            temperature=0.9,
+            temperature=0.7,
             max_tokens=500
         )
-        return response.choices[0].message.content
+        reply = response.choices[0].message.content
+        
+        # Check for lead tag
+        lead_match = re.search(r'\[LEAD:\s*name="([^"]+)"\s*phone="([^"]+)"\]', reply)
+        if lead_match:
+            name = lead_match.group(1)
+            phone = lead_match.group(2)
+            if not Lead.query.filter_by(business_id=business.id, customer_contact=phone).first():
+                db.session.add(Lead(business_id=business.id, customer_name=name, customer_contact=phone))
+                db.session.commit()
+            
+            # Remove the tag from final text
+            reply = re.sub(r'\[LEAD:\s*name="[^"]+"\s*phone="[^"]+"\]', '', reply).strip()
+            
+        return reply
     except Exception as e:
-        print(f"Grok error: {e}")
-        try:
-            from groq import Groq
-            client = Groq(api_key=api_key)
-            response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=conversation,
-                temperature=0.9,
-                max_tokens=500
-            )
-            return response.choices[0].message.content
-        except:
-            return fallback_response(messages, business)
+        print(f"Groq error: {e}")
+        return fallback_response(messages, business)
 
 
 def fallback_response(messages, business):
@@ -192,7 +183,8 @@ def onboarding():
             name=d.get('business_name', '').strip(),
             industry=d.get('industry', 'Generic/Other'),
             context_data=d.get('context_data', '').strip(),
-            system_prompt=generate_system_prompt(d.get('business_name', ''), d.get('industry'), d.get('context_data', ''))
+            system_prompt=generate_system_prompt(d.get('business_name', ''), d.get('industry'), d.get('context_data', '')),
+            api_key=secrets.token_hex(32)
         )
         b.update_subscription_limits()
         db.session.add(b)
@@ -213,6 +205,27 @@ def chat():
     if not b or not b.can_access_bot():
         return jsonify({'error': 'Subscription required'}), 403
     return jsonify({'response': get_ai_response(d.get('messages', []), d.get('business_id')), 'success': True})
+
+@app.route('/api/v1/chat/external', methods=['POST'])
+def external_chat():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    api_key = auth_header.split(' ')[1]
+    business = Business.query.filter_by(api_key=api_key).first()
+    
+    if not business:
+        return jsonify({'error': 'Invalid API Key'}), 401
+        
+    data = request.get_json()
+    if not data or 'message' not in data:
+        return jsonify({'error': 'Missing message'}), 400
+        
+    messages = [{"role": "user", "content": data['message']}]
+    
+    reply = get_ai_response(messages, business.id)
+    return jsonify({'reply': reply})
 
 @app.route('/api/leads/<int:business_id>')
 def get_leads(business_id):
