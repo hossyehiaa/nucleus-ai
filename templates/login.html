@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Login - Nucleus AI{% endblock %}
+{% block nav_links %}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center -mt-20 px-6">
+    <div class="glass-card w-full max-w-md p-8 rounded-2xl border border-gray-700/50 shadow-xl">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-2">Welcome <span class="gradient-text">Back</span></h1>
+            <p class="text-gray-400">Login to securely access your AI agents</p>
+        </div>
+        
+        {% if error %}
+        <div class="mb-6 bg-red-500/20 border border-red-500/30 text-red-400 p-3 rounded-xl text-center text-sm shadow-sm">
+            {{ error }}
+        </div>
+        {% endif %}
+        
+        <form method="POST" action="/login" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+                <input type="email" name="email" required autocomplete="email" class="w-full bg-gray-900/50 border border-gray-700/60 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                <input type="password" name="password" required autocomplete="current-password" class="w-full bg-gray-900/50 border border-gray-700/60 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+            </div>
+            <button type="submit" class="w-full btn-primary py-3 rounded-xl font-semibold mt-6 shadow-lg shadow-blue-500/20">
+                Log In
+            </button>
+        </form>
+        <p class="mt-8 text-center text-gray-400 text-sm">
+            Don't have an account? <a href="/register" class="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Create one</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

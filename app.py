@@ -16,6 +16,8 @@ except ImportError:
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 import openai
 
 db_url = os.environ.get("DATABASE_URL", "sqlite:///nucleus.db")
@@ -29,9 +31,26 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
 
 db = SQLAlchemy(app)
 
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    role = db.Column(db.String(20), default='user')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    businesses = db.relationship('Business', backref='owner', lazy=True)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
 
 class Business(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     name = db.Column(db.String(100), nullable=False)
     industry = db.Column(db.String(50), nullable=False)
     context_data = db.Column(db.Text, nullable=True)
@@ -164,6 +183,68 @@ def fallback_response(messages, business):
         return f"Welcome to {name}! 😊 How can I help?"
 
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        if User.query.filter_by(email=email).first():
+            return render_template('register.html', error="Email already exists.")
+            
+        user = User(email=email, password_hash=generate_password_hash(password))
+        db.session.add(user)
+        db.session.commit()
+        
+        login_user(user)
+        return redirect(url_for('onboarding'))
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        user = User.query.filter_by(email=email).first()
+        
+        if user and check_password_hash(user.password_hash, password):
+            login_user(user)
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('index'))
+        return render_template('login.html', error="Invalid email or password.")
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    if current_user.role != 'admin':
+        return redirect(url_for('index'))
+    businesses = Business.query.order_by(Business.created_at.desc()).all()
+    return render_template('admin.html', businesses=businesses)
+
+@app.route('/admin/edit_prompt/<int:business_id>', methods=['POST'])
+@login_required
+def edit_prompt(business_id):
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    business = Business.query.get_or_404(business_id)
+    new_prompt = request.form.get('system_prompt')
+    if new_prompt:
+        business.system_prompt = new_prompt
+        db.session.commit()
+        return jsonify({'success': True})
+    return jsonify({'error': 'No prompt provided'}), 400
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -177,10 +258,12 @@ def pricing():
     return render_template('pricing.html')
 
 @app.route('/onboarding', methods=['GET', 'POST'])
+@login_required
 def onboarding():
     if request.method == 'POST':
         d = request.form
         b = Business(
+            user_id=current_user.id,
             name=d.get('business_name', '').strip(),
             industry=d.get('industry', 'Generic/Other'),
             context_data=d.get('context_data', '').strip(),
@@ -194,8 +277,11 @@ def onboarding():
     return render_template('onboarding.html')
 
 @app.route('/dashboard/<int:business_id>')
+@login_required
 def dashboard(business_id):
     b = Business.query.get_or_404(business_id)
+    if b.user_id != current_user.id and current_user.role != 'admin':
+        return redirect(url_for('index'))
     if not b.api_key:
         b.api_key = secrets.token_hex(32)
         db.session.commit()
@@ -256,6 +342,11 @@ def checkout():
 
 with app.app_context():
     db.create_all()
+    try:
+        db.session.execute(text('ALTER TABLE business ADD COLUMN user_id INTEGER REFERENCES "user"(id);'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     try:
         db.session.execute(text('ALTER TABLE business ADD COLUMN api_key VARCHAR(64) UNIQUE;'))
         db.session.commit()

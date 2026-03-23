@@ -8,3 +8,5 @@ gunicorn==23.0.0
 python-dotenv==1.0.1
 psycopg2-binary
 groq
+Flask-Login==0.6.3
+Flask-Login==0.6.3
